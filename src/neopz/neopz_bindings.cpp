@@ -6,8 +6,10 @@ using namespace py::literals;
 
 #include "pzmanvector.h"
 #include "pzfmatrix.h"
+#include "tpzpoint.h"
+#include "tpzline.h"
+#include "tpztriangle.h"
 #include "tpzquadrilateral.h"
-
 
 PYBIND11_MODULE(neopz, m) {
     m.doc() = R"pbdoc(
@@ -49,6 +51,13 @@ PYBIND11_MODULE(neopz, m) {
             return matrix.GetVal(row, col);
         })
     ;
+
+    // TPZTriangle bindings
+    py::class_<pztopology::TPZTriangle>(m, "PZTriangle")
+            .def(py::init())
+            .def_static("SideDimension", &pztopology::TPZTriangle::SideDimension)
+    ;
+
     // TPZQuadrilateral bindings
     py::class_<pztopology::TPZQuadrilateral>(m, "PZQuad")
         .def(py::init())
