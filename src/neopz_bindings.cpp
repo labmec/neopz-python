@@ -1,85 +1,15 @@
-//#include <pybind11/pybind11.h>
-//#include <pybind11/operators.h>
-//
-//namespace py = pybind11;
-//using namespace py::literals;
-//
-//#include "pzmanvector.h"
-//#include "pzfmatrix.h"
-//#include "tpzpoint.h"
-//#include "tpzline.h"
-//#include "tpztriangle.h"
-//#include "tpzquadrilateral.h"
-//
-//PYBIND11_MODULE(neopz, m) {
-//    m.doc() = R"pbdoc(
-//        -------------------------
-//        Python bindings for NeoPZ
-//        -------------------------
-//    )pbdoc";
-//
-//    // TPZManVector<double> bindings
-//    py::class_<TPZManVector<double>>(m, "PZVecDouble")
-//        .def(py::init())
-//        .def(py::init<int64_t>())
-//        .def(py::init<int64_t, double>())
-//        .def("Resize", [](TPZManVector<double>& vec, const int64_t& newsize) { return vec.Resize(newsize); })
-//        .def("Size", [](const TPZManVector<double>& vec) { return vec.size(); })
-//        .def("__getitem__",
-//            [](const TPZManVector<double>& vec, int64_t position) {
-//                if (position >= vec.size() || position < 0) throw py::index_error();
-//                return vec[position];
-//            },
-//            py::is_operator()
-//        )
-//        .def("__setitem__",
-//            [](TPZManVector<double>& vec, int64_t position, double value) {
-//                if (position >= vec.size() || position < 0) throw py::index_error();
-//                vec[position] = value;
-//            },
-//            py::is_operator()
-//        )
-//    ;
-//    // TPZFMatrix<double> bindings
-//    py::class_<TPZFMatrix<double>>(m, "PZMatrix")
-//        .def(py::init())
-//        .def(py::init<int64_t, int64_t>())
-//        .def(py::init<int64_t, int64_t, double>())
-//        .def("GetVal", [](TPZFMatrix<double>& matrix, const int64_t& row, const int64_t& col) {
-//            if (row >= matrix.Rows() || row < 0) throw py::index_error();
-//            if (col >= matrix.Cols() || col < 0) throw py::index_error();
-//            return matrix.GetVal(row, col);
-//        })
-//    ;
-//
-//    // TPZTriangle bindings
-//    py::class_<pztopology::TPZTriangle>(m, "PZTriangle")
-//            .def(py::init())
-//            .def_static("SideDimension", &pztopology::TPZTriangle::SideDimension)
-//    ;
-//
-//    // TPZQuadrilateral bindings
-//    py::class_<pztopology::TPZQuadrilateral>(m, "PZQuad")
-//        .def(py::init())
-//        .def_static("SideDimension", &pztopology::TPZQuadrilateral::SideDimension)
-//    ;
-//
-//#ifdef VERSION_INFO
-//    m.attr("__version__") = VERSION_INFO;
-//#else
-//    m.attr("__version__") = "dev";
-//#endif
-//}
 #include <pybind11/pybind11.h>
 #include <pybind11/operators.h>
 
 namespace py = pybind11;
 using namespace py::literals;
 
+// NeoPZ container classes
 #include "pzmanvector.h"
 #include "pzfmatrix.h"
 #include "pztrnsform.h"
 
+// NeoPZ topology classes
 #include "tpzpoint.h"
 #include "tpzline.h"
 #include "tpztriangle.h"
@@ -131,6 +61,21 @@ PYBIND11_MODULE(neopz, m) {
         })
     ;
 
+    // TPZStack<int> bindings
+    py::class_<TPZStack<int>>(m, "TPZStackInt")
+        .def(py::init())
+        .def(py::init<int, int>())
+        .def("Push", [](TPZStack<int>& stack, const int object) {
+            stack.Push(object);
+        })
+        .def("Pop", [](TPZStack<int>& stack) {
+            return stack.Pop();
+        })
+        .def("Peek", [](TPZStack<int>& stack) {
+            return stack.Peek();
+        })
+    ;
+
     // TPZTransform bindings
     py::class_<TPZTransform<double>>(m, "TPZTransform")
         .def(py::init())
@@ -148,6 +93,7 @@ PYBIND11_MODULE(neopz, m) {
     // TPZPoint bindings
     py::class_<pztopology::TPZPoint>(m, "TPZPoint")
         .def(py::init())
+        .def_static("SideDimension", &pztopology::TPZPoint::SideDimension)
         .def_static("LowerDimensionSides", py::overload_cast<int, TPZStack<int> &>(&pztopology::TPZPoint::LowerDimensionSides))
         .def_static("LowerDimensionSides", py::overload_cast<int, TPZStack<int> &, int>(&pztopology::TPZPoint::LowerDimensionSides))
         .def_static("HigherDimensionSides", &pztopology::TPZPoint::HigherDimensionSides)
@@ -165,6 +111,7 @@ PYBIND11_MODULE(neopz, m) {
     // TPZLine bindings
     py::class_<pztopology::TPZLine>(m, "TPZLine")
         .def(py::init())
+        .def_static("SideDimension", &pztopology::TPZLine::SideDimension)
         .def_static("LowerDimensionSides", py::overload_cast<int, TPZStack<int> &>(&pztopology::TPZLine::LowerDimensionSides))
         .def_static("LowerDimensionSides", py::overload_cast<int, TPZStack<int> &, int>(&pztopology::TPZLine::LowerDimensionSides))
         .def_static("HigherDimensionSides", &pztopology::TPZLine::HigherDimensionSides)
@@ -182,6 +129,7 @@ PYBIND11_MODULE(neopz, m) {
     // TPZTriangle bindings
     py::class_<pztopology::TPZTriangle>(m, "TPZTriangle")
         .def(py::init())
+        .def_static("SideDimension", &pztopology::TPZTriangle::SideDimension)
         .def_static("LowerDimensionSides", py::overload_cast<int, TPZStack<int> &>(&pztopology::TPZTriangle::LowerDimensionSides))
         .def_static("LowerDimensionSides", py::overload_cast<int, TPZStack<int> &, int>(&pztopology::TPZTriangle::LowerDimensionSides))
         .def_static("HigherDimensionSides", &pztopology::TPZTriangle::HigherDimensionSides)
@@ -199,11 +147,13 @@ PYBIND11_MODULE(neopz, m) {
     // TPZQuadrilateral bindings
     py::class_<pztopology::TPZQuadrilateral>(m, "TPZQuadrilateral")
         .def(py::init())
+        .def_static("SideDimension", &pztopology::TPZQuadrilateral::SideDimension)
         .def_static("LowerDimensionSides", py::overload_cast<int, TPZStack<int> &>(&pztopology::TPZQuadrilateral::LowerDimensionSides))
         .def_static("LowerDimensionSides", py::overload_cast<int, TPZStack<int> &, int>(&pztopology::TPZQuadrilateral::LowerDimensionSides))
         .def_static("HigherDimensionSides", &pztopology::TPZQuadrilateral::HigherDimensionSides)
         .def_static("NSideNodes", &pztopology::TPZQuadrilateral::NSideNodes)
         .def_static("SideNodeLocId", &pztopology::TPZQuadrilateral::SideNodeLocId)
+        .def_static("NumSides", py::overload_cast<>(&pztopology::TPZQuadrilateral::NumSides))
         .def_static("CenterPoint", &pztopology::TPZQuadrilateral::CenterPoint)
         .def_static("RefElVolume", [](pztopology::TPZQuadrilateral& topology) { return topology.RefElVolume(); })
         .def_static("SideToSideTransform", &pztopology::TPZQuadrilateral::SideToSideTransform)
@@ -216,6 +166,7 @@ PYBIND11_MODULE(neopz, m) {
     // TPZTetrahedron bindings
     py::class_<pztopology::TPZTetrahedron>(m, "TPZTetrahedron")
         .def(py::init())
+        .def_static("SideDimension", &pztopology::TPZTetrahedron::SideDimension)
         .def_static("LowerDimensionSides", py::overload_cast<int, TPZStack<int> &>(&pztopology::TPZTetrahedron::LowerDimensionSides))
         .def_static("LowerDimensionSides", py::overload_cast<int, TPZStack<int> &, int>(&pztopology::TPZTetrahedron::LowerDimensionSides))
         .def_static("HigherDimensionSides", &pztopology::TPZTetrahedron::HigherDimensionSides)
@@ -233,6 +184,7 @@ PYBIND11_MODULE(neopz, m) {
     // TPZPyramid bindings
     py::class_<pztopology::TPZPyramid>(m, "TPZPyramid")
         .def(py::init())
+        .def_static("SideDimension", &pztopology::TPZPyramid::SideDimension)
         .def_static("LowerDimensionSides", py::overload_cast<int, TPZStack<int> &>(&pztopology::TPZPyramid::LowerDimensionSides))
         .def_static("LowerDimensionSides", py::overload_cast<int, TPZStack<int> &, int>(&pztopology::TPZPyramid::LowerDimensionSides))
         .def_static("HigherDimensionSides", &pztopology::TPZPyramid::HigherDimensionSides)
@@ -250,6 +202,7 @@ PYBIND11_MODULE(neopz, m) {
     // TPZPrism bindings
     py::class_<pztopology::TPZPrism>(m, "TPZPrism")
         .def(py::init())
+        .def_static("SideDimension", &pztopology::TPZPrism::SideDimension)
         .def_static("LowerDimensionSides", py::overload_cast<int, TPZStack<int> &>(&pztopology::TPZPrism::LowerDimensionSides))
         .def_static("LowerDimensionSides", py::overload_cast<int, TPZStack<int> &, int>(&pztopology::TPZPrism::LowerDimensionSides))
         .def_static("HigherDimensionSides", &pztopology::TPZPrism::HigherDimensionSides)
@@ -267,11 +220,13 @@ PYBIND11_MODULE(neopz, m) {
     // TPZCube bindings
     py::class_<pztopology::TPZCube>(m, "TPZCube")
         .def(py::init())
+        .def_static("SideDimension", &pztopology::TPZCube::SideDimension)
         .def_static("LowerDimensionSides", py::overload_cast<int, TPZStack<int> &>(&pztopology::TPZCube::LowerDimensionSides))
         .def_static("LowerDimensionSides", py::overload_cast<int, TPZStack<int> &, int>(&pztopology::TPZCube::LowerDimensionSides))
         .def_static("HigherDimensionSides", &pztopology::TPZCube::HigherDimensionSides)
         .def_static("NSideNodes", &pztopology::TPZCube::NSideNodes)
         .def_static("SideNodeLocId", &pztopology::TPZCube::SideNodeLocId)
+        .def_static("NumSides", py::overload_cast<>(&pztopology::TPZCube::NumSides))
         .def_static("CenterPoint", &pztopology::TPZCube::CenterPoint)
         .def_static("RefElVolume", [](pztopology::TPZCube& topology) { return topology.RefElVolume(); })
         .def_static("SideToSideTransform", &pztopology::TPZCube::SideToSideTransform)
