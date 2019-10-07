@@ -47,6 +47,18 @@ PYBIND11_MODULE(neopz, m) {
              },
              py::is_operator()
         )
+        .def("__repr__",
+             [](const TPZManVector<double>& vec) {
+                 std::string r("TPZVecDouble [");
+                 r += std::to_string(vec[0]);
+                 for (int i = 1; i < vec.NElements(); i++) {
+                     r += ", ";
+                     r += std::to_string(vec[i]);
+                 }
+                 r += "]";
+                 return r;
+             }
+        )
     ;
 
     // TPZFMatrix<double> bindings
@@ -59,6 +71,26 @@ PYBIND11_MODULE(neopz, m) {
             if (col >= matrix.Cols() || col < 0) throw py::index_error();
             return matrix.GetVal(row, col);
         })
+        .def("__repr__",
+             [](TPZFMatrix<double>& matrix) {
+                 std::string r("TPZMatrix ");
+                 r += "'(";
+                 r += std::to_string(matrix.Rows());
+                 r += " x ";
+                 r += std::to_string(matrix.Cols());
+                 r += ")' = [\n";
+                 for (int64_t row = 0; row < matrix.Rows(); row++) {
+                     r += "\t";
+                     for (int64_t col = 0; col < matrix.Cols(); col++) {
+                         r += std::to_string(matrix.GetVal(row, col));
+                         r += "  ";
+                     }
+                     r += "\n";
+                 }
+                 r += "]";
+                 return r;
+             }
+        )
     ;
 
     // TPZStack<int> bindings
@@ -74,6 +106,19 @@ PYBIND11_MODULE(neopz, m) {
         .def("Peek", [](TPZStack<int>& stack) {
             return stack.Peek();
         })
+        .def("__repr__",
+            [](const TPZStack<int>& stack) {
+                std::string r("TPZStackInt [");
+                for (int i = 0; i < stack.NElements(); i++) {
+                    r += std::to_string(stack[i]);
+                    if (i != stack.NElements() - 1) {
+                        r += ", ";
+                    }
+                }
+                r += "]";
+                return r;
+            }
+        )
     ;
 
     // TPZTransform bindings
@@ -88,6 +133,42 @@ PYBIND11_MODULE(neopz, m) {
         .def("SetMatrix", &TPZTransform<double>::SetMatrix)
         .def("Multiply", &TPZTransform<double>::Multiply)
         .def("Apply", &TPZTransform<double>::Apply)
+        .def("__repr__",
+             [](const TPZTransform<double>& trans) {
+                 std::string r("TPZTransform\n");
+                 r += "  Mult ";
+                 r += "'(";
+                 r += std::to_string(trans.Mult().Rows());
+                 r += " x ";
+                 r += std::to_string(trans.Mult().Cols());
+                 r += ")' = [\n";
+                 for (int64_t row = 0; row < trans.Mult().Rows(); row++) {
+                     r += "\t";
+                     for (int64_t col = 0; col < trans.Mult().Cols(); col++) {
+                         r += std::to_string(trans.Mult().GetVal(row, col));
+                         r += "  ";
+                     }
+                     r += "\n";
+                 }
+                 r += "]\n";
+                 r += "  Sum";
+                 r += "'(";
+                 r += std::to_string(trans.Sum().Rows());
+                 r += " x ";
+                 r += std::to_string(trans.Sum().Cols());
+                 r += ")' = [\n";
+                 for (int64_t row = 0; row < trans.Sum().Rows(); row++) {
+                     r += "\t";
+                     for (int64_t col = 0; col < trans.Sum().Cols(); col++) {
+                         r += std::to_string(trans.Sum().GetVal(row, col));
+                         r += "  ";
+                     }
+                     r += "\n";
+                 }
+                 r += "]";
+                 return r;
+             }
+        )
     ;
 
     // TPZPoint bindings
@@ -99,6 +180,7 @@ PYBIND11_MODULE(neopz, m) {
         .def_static("HigherDimensionSides", &pztopology::TPZPoint::HigherDimensionSides)
         .def_static("NSideNodes", &pztopology::TPZPoint::NSideNodes)
         .def_static("SideNodeLocId", &pztopology::TPZPoint::SideNodeLocId)
+        .def_static("NumSides", py::overload_cast<>(&pztopology::TPZPoint::NumSides))
         .def_static("CenterPoint", &pztopology::TPZPoint::CenterPoint)
         .def_static("RefElVolume", [](pztopology::TPZPoint& topology) { return topology.RefElVolume(); })
         .def_static("SideToSideTransform", &pztopology::TPZPoint::SideToSideTransform)
@@ -117,6 +199,7 @@ PYBIND11_MODULE(neopz, m) {
         .def_static("HigherDimensionSides", &pztopology::TPZLine::HigherDimensionSides)
         .def_static("NSideNodes", &pztopology::TPZLine::NSideNodes)
         .def_static("SideNodeLocId", &pztopology::TPZLine::SideNodeLocId)
+        .def_static("NumSides", py::overload_cast<>(&pztopology::TPZLine::NumSides))
         .def_static("CenterPoint", &pztopology::TPZLine::CenterPoint)
         .def_static("RefElVolume", [](pztopology::TPZLine& topology) { return topology.RefElVolume(); })
         .def_static("SideToSideTransform", &pztopology::TPZLine::SideToSideTransform)
@@ -135,6 +218,7 @@ PYBIND11_MODULE(neopz, m) {
         .def_static("HigherDimensionSides", &pztopology::TPZTriangle::HigherDimensionSides)
         .def_static("NSideNodes", &pztopology::TPZTriangle::NSideNodes)
         .def_static("SideNodeLocId", &pztopology::TPZTriangle::SideNodeLocId)
+        .def_static("NumSides", py::overload_cast<>(&pztopology::TPZTriangle::NumSides))
         .def_static("CenterPoint", &pztopology::TPZTriangle::CenterPoint)
         .def_static("RefElVolume", [](pztopology::TPZTriangle& topology) { return topology.RefElVolume(); })
         .def_static("SideToSideTransform", &pztopology::TPZTriangle::SideToSideTransform)
@@ -172,6 +256,7 @@ PYBIND11_MODULE(neopz, m) {
         .def_static("HigherDimensionSides", &pztopology::TPZTetrahedron::HigherDimensionSides)
         .def_static("NSideNodes", &pztopology::TPZTetrahedron::NSideNodes)
         .def_static("SideNodeLocId", &pztopology::TPZTetrahedron::SideNodeLocId)
+        .def_static("NumSides", py::overload_cast<>(&pztopology::TPZTetrahedron::NumSides))
         .def_static("CenterPoint", &pztopology::TPZTetrahedron::CenterPoint)
         .def_static("RefElVolume", [](pztopology::TPZTetrahedron& topology) { return topology.RefElVolume(); })
         .def_static("SideToSideTransform", &pztopology::TPZTetrahedron::SideToSideTransform)
@@ -190,6 +275,7 @@ PYBIND11_MODULE(neopz, m) {
         .def_static("HigherDimensionSides", &pztopology::TPZPyramid::HigherDimensionSides)
         .def_static("NSideNodes", &pztopology::TPZPyramid::NSideNodes)
         .def_static("SideNodeLocId", &pztopology::TPZPyramid::SideNodeLocId)
+        .def_static("NumSides", py::overload_cast<>(&pztopology::TPZPyramid::NumSides))
         .def_static("CenterPoint", &pztopology::TPZPyramid::CenterPoint)
         .def_static("RefElVolume", [](pztopology::TPZPyramid& topology) { return topology.RefElVolume(); })
         .def_static("SideToSideTransform", &pztopology::TPZPyramid::SideToSideTransform)
@@ -208,6 +294,7 @@ PYBIND11_MODULE(neopz, m) {
         .def_static("HigherDimensionSides", &pztopology::TPZPrism::HigherDimensionSides)
         .def_static("NSideNodes", &pztopology::TPZPrism::NSideNodes)
         .def_static("SideNodeLocId", &pztopology::TPZPrism::SideNodeLocId)
+        .def_static("NumSides", py::overload_cast<>(&pztopology::TPZPrism::NumSides))
         .def_static("CenterPoint", &pztopology::TPZPrism::CenterPoint)
         .def_static("RefElVolume", [](pztopology::TPZPrism& topology) { return topology.RefElVolume(); })
         .def_static("SideToSideTransform", &pztopology::TPZPrism::SideToSideTransform)

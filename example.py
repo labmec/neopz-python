@@ -1,9 +1,19 @@
 from neopz import *
 
-print("Testando sides do quadrilatero")
+print("Testando sides do triangulo")
 for sideId in range(TPZQuadrilateral.NumSides()):
     print(TPZQuadrilateral.NSideNodes(sideId))
 
-print("Testando sides do cubo")
-for sideId in range(TPZCube.NumSides()):
-    print(TPZCube.NSideNodes(sideId))
+trans = TPZTriangle.SideToSideTransform(TPZTriangle.NumSides() - 1, 3)
+print(trans)
+
+print("Testando print de containers")
+
+stack = TPZStackInt(3, 4)
+print(stack)
+
+matrix = TPZMatrix(3, 1, 1.)
+print(matrix)
+
+vec = TPZVecDouble(3, 1.)
+print(vec)
