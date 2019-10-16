@@ -334,6 +334,7 @@ PYBIND11_MODULE(neopz, m) {
     py::class_<TPZGeoMesh>(m, "TPZGeoMesh")
         .def(py::init())
         .def("Print", [](TPZGeoMesh &GeoMesh){ return GeoMesh.Print();})
+        .def("BuildConnectivity", &TPZGeoMesh::BuildConnectivity)
     ;
 
     // TPZGMshReader
