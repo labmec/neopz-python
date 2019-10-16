@@ -19,6 +19,10 @@ using namespace py::literals;
 #include "tpzprism.h"
 #include "tpzcube.h"
 
+// Geometric mesh
+#include "TPZGmshReader.h"
+#include "pzgmesh.h"
+
 PYBIND11_MODULE(neopz, m) {
     m.doc() = R"pbdoc(
         -------------------------
@@ -135,6 +139,9 @@ PYBIND11_MODULE(neopz, m) {
         .def("Apply", &TPZTransform<double>::Apply)
         .def("__repr__",
              [](const TPZTransform<double>& trans) {
+                //  std::stringstream repr;
+                //  trans.Print(repr);
+                //  return repr.str();
                  std::string r("TPZTransform\n");
                  r += "  Mult ";
                  r += "'(";
@@ -321,6 +328,19 @@ PYBIND11_MODULE(neopz, m) {
         .def_static("TransformElementToSide", &pztopology::TPZCube::TransformElementToSide)
         .def_static("IsInParametricDomain", &pztopology::TPZCube::IsInParametricDomain)
         .def_static("CreateSideIntegrationRule", &pztopology::TPZCube::CreateSideIntegrationRule)
+    ;
+
+    // TPZGeoMesh bindings
+    py::class_<TPZGeoMesh>(m, "TPZGeoMesh")
+        .def(py::init())
+        .def("Print", [](TPZGeoMesh &GeoMesh){ return GeoMesh.Print();})
+    ;
+
+    // TPZGMshReader
+    py::class_<TPZGmshReader>(m, "TPZGmshReader")
+        .def(py::init())
+        .def("GeometricGmshMesh3", &TPZGmshReader::GeometricGmshMesh3, "Reads geometric mesh from GMsh (3.x) .msh file.") 
+        .def("GeometricGmshMesh4", &TPZGmshReader::GeometricGmshMesh4, "Reads geometric mesh from GMsh (4.x) .msh file.") 
     ;
 
 #ifdef VERSION_INFO
