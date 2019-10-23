@@ -23,6 +23,23 @@ using namespace py::literals;
 #include "TPZGmshReader.h"
 #include "pzgmesh.h"
 
+//
+#include "TPZSSpStructMatrix.h"
+#include "pzcmesh.h"
+
+
+//
+#include "TPZMaterial.h"
+#include "pzpoisson3d.h"
+#include "pzbndcond.h"
+#include <map>                    // for map
+#include <set>                    // for set
+#include "pzanalysis.h"
+#include "pzstepsolver.h"
+#include "pzstrmatrix.h"
+#include "pzmatrix.h"
+
+
 PYBIND11_MODULE(neopz, m) {
     m.doc() = R"pbdoc(
         -------------------------
@@ -65,8 +82,10 @@ PYBIND11_MODULE(neopz, m) {
         )
     ;
 
+    
+    
     // TPZFMatrix<double> bindings
-    py::class_<TPZFMatrix<double>>(m, "TPZMatrix")
+    py::class_<TPZFMatrix<double>>(m, "TPZFMatrix")
         .def(py::init())
         .def(py::init<int64_t, int64_t>())
         .def(py::init<int64_t, int64_t, double>())
@@ -77,7 +96,7 @@ PYBIND11_MODULE(neopz, m) {
         })
         .def("__repr__",
              [](TPZFMatrix<double>& matrix) {
-                 std::string r("TPZMatrix ");
+                 std::string r("TPZFMatrix ");
                  r += "'(";
                  r += std::to_string(matrix.Rows());
                  r += " x ";
@@ -177,6 +196,7 @@ PYBIND11_MODULE(neopz, m) {
              }
         )
     ;
+    
 
     // TPZPoint bindings
     py::class_<pztopology::TPZPoint>(m, "TPZPoint")
@@ -343,7 +363,133 @@ PYBIND11_MODULE(neopz, m) {
         .def("GeometricGmshMesh3", &TPZGmshReader::GeometricGmshMesh3, "Reads geometric mesh from GMsh (3.x) .msh file.") 
         .def("GeometricGmshMesh4", &TPZGmshReader::GeometricGmshMesh4, "Reads geometric mesh from GMsh (4.x) .msh file.") 
     ;
+    //TPZMaterial
+    py::class_<TPZMaterial>(m, "TPZMaterial" )
+//    TPZMaterial.def("CreateBC", [](TPZMaterial *mat, int id, int type, TPZFMatrix<double> &val1, TPZFMatrix<double> &val2  ){ return mat->CreateBC(mat, id, type, val1, val2);})
+    .def("CreateBC", &TPZMaterial::CreateBC)
+    
+    
+    ;
+    
+//     TPZBndCond *TPZMaterial::CreateBC(TPZMaterial * reference, int id, int typ, TPZFMatrix<STATE> &val1, TPZFMatrix<STATE> &val2)
+    
+    
+    py::class_<TPZBndCond, TPZMaterial >(m, "TPZBndCond")
+    .def(py::init<>())
+    .def(py::init<int>())
+//    .def(py::init< TPZMaterial *,int ,int , TPZFMatrix<STATE> &,TPZFMatrix<STATE> &>())
+     .def(py::init< TPZMaterial * ,int ,int  , TPZFMatrix<STATE> & ,TPZFMatrix<STATE> & >())
+    ;
+    
+    //TPZMaterial
+    py::class_<TPZMatPoisson3d, TPZMaterial >(m, "TPZMatPoisson3d")
+        .def(py::init<int, int>())
+    
+    ;
 
+  
+    
+    //
+    py::class_<TPZCompMesh >(m, "TPZCompMesh")
+        .def(py::init())
+        .def(py::init<TPZGeoMesh *>())
+        .def("AutoBuild", [](TPZCompMesh &compmesh){ return compmesh.AutoBuild();})
+    
+        .def("SetDimModel", &TPZCompMesh::SetDimModel )
+    
+        .def("InsertMaterialObject", [](TPZCompMesh &compmesh, TPZMaterial *mat){ return compmesh.InsertMaterialObject(mat);} )
+    
+        .def("SetAllCreateFunctionsContinuous", &TPZCompMesh::SetAllCreateFunctionsContinuous )
+    
+        .def("NMaterials", &TPZCompMesh::NMaterials )
+    
+    
+        .def("Print", [](TPZCompMesh &compmesh){ return compmesh.Print();})
+    .def("SetDefaultOrder",&TPZCompMesh::SetDefaultOrder)
+    
+    
+    ;
+    
+
+    py::class_<TPZMatrixSolver<STATE> >(m, "TPZMatrixSolver")
+  
+    
+    ;
+    
+    py::class_<TPZStepSolver<STATE>, TPZMatrixSolver<STATE> >(m, "TPZStepSolver")
+    .def(py::init())
+    .def("SetDirect", &TPZStepSolver<STATE>::SetDirect)
+    
+    ;
+    
+    py::class_<TPZMatrix<double> > mat(m, "TPZMatrix")
+    
+    ;
+    
+    py::enum_<DecomposeType>(m, "DecomposeType")
+    .value("ECholesky", DecomposeType::ECholesky)
+    .export_values();
+    
+    py::class_<TPZStructMatrix >(m, "TPZStructMatrix")
+    
+    
+    ;
+    
+    
+    
+    
+    py::class_<TPZSymetricSpStructMatrix, TPZStructMatrix >(m, "TPZSymetricSpStructMatrix")
+    
+    .def(py::init<TPZCompMesh *>())
+    .def("Create", [](TPZSymetricSpStructMatrix & spmatrix) {
+    })
+    .def("SetupMatrixData", [](TPZSymetricSpStructMatrix & spmatrix,TPZStack<int64_t> & elgraph, TPZVec<int64_t> &elgraphindex) {
+        return spmatrix.SetupMatrixData(elgraph, elgraphindex);
+    })
+    
+    ;
+//
+    py::class_<TPZVec<std::string> >(m, "TPZVecString")
+    .def(py::init())
+    .def(py::init<int64_t>())
+    .def(py::init<int64_t, std::string>())
+    
+    .def("__getitem__",
+         [](const TPZVec<std::string>& vec, int64_t position) {
+             if (position >= vec.size() || position < 0) throw py::index_error();
+             return vec[position];
+         },
+         py::is_operator()
+         )
+    .def("__setitem__",
+         [](TPZVec<std::string>& vec, int64_t position, std::string value) {
+             if (position >= vec.size() || position < 0) throw py::index_error();
+             vec[position] = value;
+         },
+         py::is_operator()
+         )
+
+    
+    
+    ;
+    //
+    
+    py::class_<TPZAnalysis >(m, "TPZAnalysis")
+    .def(py::init())
+    .def(py::init<TPZCompMesh *, bool>())
+    .def("SetStructuralMatrix",py::overload_cast<TPZStructMatrix &>(&TPZAnalysis::SetStructuralMatrix))
+    .def("SetSolver", &TPZAnalysis::SetSolver)
+    .def("Assemble", &TPZAnalysis::Assemble)
+    .def("Solve", &TPZAnalysis::Solve)
+    .def("DefineGraphMesh", py::overload_cast<int,const TPZVec<std::string> &,const TPZVec<std::string>&, const std::string &  >(&TPZAnalysis::DefineGraphMesh))
+    .def("PostProcess", py::overload_cast<int, int>(&TPZAnalysis::PostProcess))
+    
+//    void TPZAnalysis::DefineGraphMesh(int dimension, const TPZVec<std::string> &scalnames, const TPZVec<std::string> &vecnames, const std::string &plotfile)
+    
+    
+    ;
+  // .def("Mult", py::overload_cast<>(&TPZTransform<double>::Mult))
+    
 #ifdef VERSION_INFO
     m.attr("__version__") = VERSION_INFO;
 #else

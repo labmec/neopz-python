@@ -1,0 +1,7 @@
+README.md
+setup.py
+neopz.egg-info/PKG-INFO
+neopz.egg-info/SOURCES.txt
+neopz.egg-info/dependency_links.txt
+neopz.egg-info/not-zip-safe
+neopz.egg-info/top_level.txt
