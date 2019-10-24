@@ -82,7 +82,40 @@ PYBIND11_MODULE(neopz, m) {
         )
     ;
 
-    
+    // // chunk vector
+    //  py::class_<TPZChunkVector<double>>(m, "TPZVecDouble")
+    //     .def(py::init())
+    //     .def(py::init<int64_t>())
+    //     .def(py::init<int64_t, double>())
+    //     .def("Resize", [](TPZManVector<double>& vec, const int64_t& newsize) { return vec.Resize(newsize); })
+    //     .def("Size", [](const TPZManVector<double>& vec) { return vec.size(); })
+    //     .def("__getitem__",
+    //          [](const TPZManVector<double>& vec, int64_t position) {
+    //              if (position >= vec.size() || position < 0) throw py::index_error();
+    //              return vec[position];
+    //          },
+    //          py::is_operator()
+    //     )
+    //     .def("__setitem__",
+    //          [](TPZManVector<double>& vec, int64_t position, double value) {
+    //              if (position >= vec.size() || position < 0) throw py::index_error();
+    //              vec[position] = value;
+    //          },
+    //          py::is_operator()
+    //     )
+    //     .def("__repr__",
+    //          [](const TPZManVector<double>& vec) {
+    //              std::string r("TPZVecDouble [");
+    //              r += std::to_string(vec[0]);
+    //              for (int i = 1; i < vec.NElements(); i++) {
+    //                  r += ", ";
+    //                  r += std::to_string(vec[i]);
+    //              }
+    //              r += "]";
+    //              return r;
+    //          }
+    //     )
+    // ;
     
     // TPZFMatrix<double> bindings
     py::class_<TPZFMatrix<double>>(m, "TPZFMatrix")
@@ -355,6 +388,7 @@ PYBIND11_MODULE(neopz, m) {
         .def(py::init())
         .def("Print", [](TPZGeoMesh &GeoMesh){ return GeoMesh.Print();})
         .def("BuildConnectivity", &TPZGeoMesh::BuildConnectivity)
+        .def("NElements", &TPZGeoMesh::NElements)
     ;
 
     // TPZGMshReader
@@ -403,6 +437,7 @@ PYBIND11_MODULE(neopz, m) {
     
         .def("NMaterials", &TPZCompMesh::NMaterials )
     
+        .def("NElements", &TPZCompMesh::NElements)
     
         .def("Print", [](TPZCompMesh &compmesh){ return compmesh.Print();})
     .def("SetDefaultOrder",&TPZCompMesh::SetDefaultOrder)

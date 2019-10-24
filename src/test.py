@@ -3,7 +3,9 @@ gmesh = TPZGeoMesh()
 read = TPZGmshReader()
 gmesh = read.GeometricGmshMesh4("tests/geometric-mesh/simple_2D_coarse.msh",gmesh)
 gmesh.BuildConnectivity()
-
+print("______")
+print(gmesh.NElements())
+print("______")
 cmesh = TPZCompMesh(gmesh)
 mat = TPZMatPoisson3d(1,2)
 val = cmesh.InsertMaterialObject(mat)
@@ -28,23 +30,29 @@ cmesh.SetDimModel(2)
 
 cmesh.SetAllCreateFunctionsContinuous()
 cmesh.SetDefaultOrder(1)
+print("______")
+print(cmesh.NElements())
+print("______")
 cmesh.AutoBuild()
-an = TPZAnalysis(cmesh, 1)
-struc_mat = TPZSymetricSpStructMatrix(cmesh)
-an.SetStructuralMatrix(struc_mat)
-stepsol = TPZStepSolver()
-stepsol.SetDirect(ECholesky)
-an.SetSolver(stepsol)
-an.Assemble()
-an.Solve()
 
-name = str("resultado.vtk")
-scalnames = TPZVecString(1)
-vecnames = TPZVecString(1)
-scalnames[0]="state"
 
-an.DefineGraphMesh(2,scalnames,vecnames, name)
-an.PostProcess(0,2)
+
+# an = TPZAnalysis(cmesh, 1)
+# struc_mat = TPZSymetricSpStructMatrix(cmesh)
+# an.SetStructuralMatrix(struc_mat)
+# stepsol = TPZStepSolver()
+# stepsol.SetDirect(ECholesky)
+# an.SetSolver(stepsol)
+# an.Assemble()
+# an.Solve()
+
+# name = str("resultado.vtk")
+# scalnames = TPZVecString(1)
+# vecnames = TPZVecString(1)
+# scalnames[0]="state"
+
+# an.DefineGraphMesh(2,scalnames,vecnames, name)
+# an.PostProcess(0,2)
 
 
 
