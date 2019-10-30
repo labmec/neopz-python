@@ -432,7 +432,8 @@ PYBIND11_MODULE(neopz, m) {
   
     
     //
-    py::class_<TPZCompMesh >(m, "TPZCompMesh")
+    py::class_<TPZCompMesh , std::unique_ptr<TPZCompMesh, py::nodelete>>(m, "TPZCompMesh")
+//    py::class_<TPZCompMesh >(m, "TPZCompMesh")
         .def(py::init())
         .def(py::init<TPZGeoMesh *>())
         .def("AutoBuild", [](TPZCompMesh &compmesh){ return compmesh.AutoBuild();})
