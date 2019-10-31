@@ -16,7 +16,7 @@ IF (WIN32)
 ELSE ()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-narrowing")
-  find_package(PZ REQUIRED HINTS /home/natalia/CLionProjects/pzlibrary/neopzclean-install/CMake) 
+  find_package(PZ REQUIRED) 
 ENDIF()
 
 include_directories(${PZ_INCLUDE_DIRS})
