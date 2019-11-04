@@ -1,7 +1,7 @@
 from neopz import*
 gmesh = TPZGeoMesh()
 read = TPZGmshReader()
-gmesh = read.GeometricGmshMesh4("tests/geometric-mesh/simple_2D_coarse.msh",gmesh)
+gmesh = read.GeometricGmshMesh4("geometric-mesh/simple_2D_coarse.msh", gmesh)
 gmesh.BuildConnectivity()
 mat = TPZMatPoisson3d(1,2)
 cmesh = TPZCompMesh(gmesh)
