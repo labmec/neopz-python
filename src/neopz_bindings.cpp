@@ -284,7 +284,7 @@ PYBIND11_MODULE(neopz, m) {
         .def_static("SideToSideTransform", &pztopology::TPZTriangle::SideToSideTransform)
         .def_static("TransformSideToElement", &pztopology::TPZTriangle::TransformSideToElement)
         .def_static("TransformElementToSide", &pztopology::TPZTriangle::TransformElementToSide)
-        .def_static("IsInParametricDomain", (bool (*) (const TPZVec<REAL>&, REAL)) &pztopology::TPZTriangle::IsInParametricDomain)//&pztopology::TPZTriangle::IsInParametricDomain) py::overload_cast<const TPZVec<REAL>&, REAL>(&pztopology::TPZTriangle::IsInParametricDomain))//
+        .def_static("IsInParametricDomain", (bool (*) (const TPZVec<REAL>&, REAL)) &pztopology::TPZTriangle::IsInParametricDomain)
         .def_static("CreateSideIntegrationRule", &pztopology::TPZTriangle::CreateSideIntegrationRule)
     ;
 
