@@ -31,6 +31,7 @@ using namespace py::literals;
 //
 #include "TPZMaterial.h"
 #include "pzpoisson3d.h"
+#include "TPZMatElasticity2D.h"
 #include "pzbndcond.h"
 #include <map>                    // for map
 #include <set>                    // for set
@@ -398,9 +399,10 @@ PYBIND11_MODULE(neopz, m) {
         .def("GeometricGmshMesh4", &TPZGmshReader::GeometricGmshMesh4, "Reads geometric mesh from GMsh (4.x) .msh file.") 
     ;
     //TPZMaterial
-    py::class_<TPZMaterial>(m, "TPZMaterial" )
+    py::class_<TPZMaterial, std::unique_ptr<TPZMaterial, py::nodelete>>(m, "TPZMaterial")
 //    TPZMaterial.def("CreateBC", [](TPZMaterial *mat, int id, int type, TPZFMatrix<double> &val1, TPZFMatrix<double> &val2  ){ return mat->CreateBC(mat, id, type, val1, val2);})
     .def("CreateBC", &TPZMaterial::CreateBC)
+    .def("SetId", &TPZMaterial::SetId)
     
     
     ;
@@ -408,7 +410,7 @@ PYBIND11_MODULE(neopz, m) {
 //     TPZBndCond *TPZMaterial::CreateBC(TPZMaterial * reference, int id, int typ, TPZFMatrix<STATE> &val1, TPZFMatrix<STATE> &val2)
     
     
-    py::class_<TPZBndCond, TPZMaterial >(m, "TPZBndCond")
+    py::class_<TPZBndCond, TPZMaterial , std::unique_ptr<TPZBndCond, py::nodelete>>(m, "TPZBndCond")
     .def(py::init<>())
     .def(py::init<int>())
 //    .def(py::init< TPZMaterial *,int ,int , TPZFMatrix<STATE> &,TPZFMatrix<STATE> &>())
@@ -416,15 +418,22 @@ PYBIND11_MODULE(neopz, m) {
     ;
     
     //TPZMaterial
-    py::class_<TPZMatPoisson3d, TPZMaterial >(m, "TPZMatPoisson3d")
+//    py::class_<TPZMatPoisson3d, TPZMaterial >(m, "TPZMatPoisson3d")
+    py::class_<TPZMatPoisson3d, TPZMaterial , std::unique_ptr<TPZMatPoisson3d, py::nodelete>>(m, "TPZMatPoisson3d")
         .def(py::init<int, int>())
     
     ;
 
+    py::class_<TPZMatElasticity2D, TPZMaterial >(m, "TPZMatElasticity2D")
+            .def(py::init<int>())
+
+            ;
+
   
     
     //
-    py::class_<TPZCompMesh >(m, "TPZCompMesh")
+    py::class_<TPZCompMesh , std::unique_ptr<TPZCompMesh, py::nodelete>>(m, "TPZCompMesh")
+//    py::class_<TPZCompMesh >(m, "TPZCompMesh")
         .def(py::init())
         .def(py::init<TPZGeoMesh *>())
         .def("AutoBuild", [](TPZCompMesh &compmesh){ return compmesh.AutoBuild();})
