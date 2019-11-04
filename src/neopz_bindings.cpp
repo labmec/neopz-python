@@ -284,7 +284,7 @@ PYBIND11_MODULE(neopz, m) {
         .def_static("SideToSideTransform", &pztopology::TPZTriangle::SideToSideTransform)
         .def_static("TransformSideToElement", &pztopology::TPZTriangle::TransformSideToElement)
         .def_static("TransformElementToSide", &pztopology::TPZTriangle::TransformElementToSide)
-        .def_static("IsInParametricDomain", &pztopology::TPZTriangle::IsInParametricDomain)
+        .def_static("IsInParametricDomain", (bool (*) (const TPZVec<REAL>&, REAL)) &pztopology::TPZTriangle::IsInParametricDomain)//&pztopology::TPZTriangle::IsInParametricDomain) py::overload_cast<const TPZVec<REAL>&, REAL>(&pztopology::TPZTriangle::IsInParametricDomain))//
         .def_static("CreateSideIntegrationRule", &pztopology::TPZTriangle::CreateSideIntegrationRule)
     ;
 
@@ -303,7 +303,7 @@ PYBIND11_MODULE(neopz, m) {
         .def_static("SideToSideTransform", &pztopology::TPZQuadrilateral::SideToSideTransform)
         .def_static("TransformSideToElement", &pztopology::TPZQuadrilateral::TransformSideToElement)
         .def_static("TransformElementToSide", &pztopology::TPZQuadrilateral::TransformElementToSide)
-        .def_static("IsInParametricDomain", &pztopology::TPZQuadrilateral::IsInParametricDomain)
+        .def_static("IsInParametricDomain", (bool (*) (const TPZVec<REAL>&, REAL)) &pztopology::TPZQuadrilateral::IsInParametricDomain)
         .def_static("CreateSideIntegrationRule", &pztopology::TPZQuadrilateral::CreateSideIntegrationRule)
     ;
 
@@ -322,7 +322,7 @@ PYBIND11_MODULE(neopz, m) {
         .def_static("SideToSideTransform", &pztopology::TPZTetrahedron::SideToSideTransform)
         .def_static("TransformSideToElement", &pztopology::TPZTetrahedron::TransformSideToElement)
         .def_static("TransformElementToSide", &pztopology::TPZTetrahedron::TransformElementToSide)
-        .def_static("IsInParametricDomain", &pztopology::TPZTetrahedron::IsInParametricDomain)
+        .def_static("IsInParametricDomain", (bool (*) (const TPZVec<REAL>&, REAL)) &pztopology::TPZTetrahedron::IsInParametricDomain)
         .def_static("CreateSideIntegrationRule", &pztopology::TPZTetrahedron::CreateSideIntegrationRule)
     ;
 
@@ -341,7 +341,7 @@ PYBIND11_MODULE(neopz, m) {
         .def_static("SideToSideTransform", &pztopology::TPZPyramid::SideToSideTransform)
         .def_static("TransformSideToElement", &pztopology::TPZPyramid::TransformSideToElement)
         .def_static("TransformElementToSide", &pztopology::TPZPyramid::TransformElementToSide)
-        .def_static("IsInParametricDomain", &pztopology::TPZPyramid::IsInParametricDomain)
+        .def_static("IsInParametricDomain", (bool (*) (const TPZVec<REAL>&, REAL)) &pztopology::TPZPyramid::IsInParametricDomain)
         .def_static("CreateSideIntegrationRule", &pztopology::TPZPyramid::CreateSideIntegrationRule)
     ;
 
@@ -360,7 +360,7 @@ PYBIND11_MODULE(neopz, m) {
         .def_static("SideToSideTransform", &pztopology::TPZPrism::SideToSideTransform)
         .def_static("TransformSideToElement", &pztopology::TPZPrism::TransformSideToElement)
         .def_static("TransformElementToSide", &pztopology::TPZPrism::TransformElementToSide)
-        .def_static("IsInParametricDomain", &pztopology::TPZPrism::IsInParametricDomain)
+        .def_static("IsInParametricDomain", (bool (*) (const TPZVec<REAL>&, REAL)) &pztopology::TPZPrism::IsInParametricDomain)
         .def_static("CreateSideIntegrationRule", &pztopology::TPZPrism::CreateSideIntegrationRule)
     ;
 
@@ -379,7 +379,7 @@ PYBIND11_MODULE(neopz, m) {
         .def_static("SideToSideTransform", &pztopology::TPZCube::SideToSideTransform)
         .def_static("TransformSideToElement", &pztopology::TPZCube::TransformSideToElement)
         .def_static("TransformElementToSide", &pztopology::TPZCube::TransformElementToSide)
-        .def_static("IsInParametricDomain", &pztopology::TPZCube::IsInParametricDomain)
+        .def_static("IsInParametricDomain", (bool (*) (const TPZVec<REAL>&, REAL)) &pztopology::TPZCube::IsInParametricDomain)
         .def_static("CreateSideIntegrationRule", &pztopology::TPZCube::CreateSideIntegrationRule)
     ;
 
