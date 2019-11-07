@@ -1,5 +1,8 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/operators.h>
+#include <pybind11/iostream.h>
+#include <pybind11/stl.h>
+#include <pybind11/stl_bind.h>
 
 namespace py = pybind11;
 using namespace py::literals;
@@ -22,16 +25,19 @@ using namespace py::literals;
 // Geometric mesh
 #include "TPZGmshReader.h"
 #include "pzgmesh.h"
+#include "TPZVTKGeoMesh.h"
+#include "pzgeoelbc.h"
+#include "pzgeoelside.h"
 
 //
 #include "TPZSSpStructMatrix.h"
 #include "pzcmesh.h"
 
-
 //
 #include "TPZMaterial.h"
 #include "pzpoisson3d.h"
 #include "TPZMatElasticity2D.h"
+#include "pzelast3d.h"
 #include "pzbndcond.h"
 #include <map>                    // for map
 #include <set>                    // for set
@@ -40,6 +46,12 @@ using namespace py::literals;
 #include "pzstrmatrix.h"
 #include "pzmatrix.h"
 
+// For SBFEM simulations
+#include "TPZSBFemVolume.h"
+#include "TPZSBFemElementGroup.h"
+#include "TPZBuildSBFem.h"
+
+PYBIND11_MAKE_OPAQUE(std::map<int,int>)
 
 PYBIND11_MODULE(neopz, m) {
     m.doc() = R"pbdoc(
@@ -48,8 +60,43 @@ PYBIND11_MODULE(neopz, m) {
         -------------------------
     )pbdoc";
 
+    // TPZVec<double> bindings
+    py::class_<TPZVec <double>>(m, "TPZVecDouble")
+        .def(py::init())
+        .def(py::init<int64_t>())
+        .def(py::init<int64_t, double>())
+        .def("Resize", [](TPZVec<double>& vec, const int64_t& newsize) { return vec.Resize(newsize); })
+        .def("Size", [](const TPZVec<double>& vec) { return vec.size(); })
+        .def("__getitem__",
+             [](const TPZVec<double>& vec, int64_t position) {
+                 if (position >= vec.size() || position < 0) throw py::index_error();
+                 return vec[position];
+             },
+             py::is_operator()
+        )
+        .def("__setitem__",
+             [](TPZVec<double>& vec, int64_t position, double value) {
+                 if (position >= vec.size() || position < 0) throw py::index_error();
+                 vec[position] = value;
+             },
+             py::is_operator()
+        )
+        .def("__repr__",
+             [](const TPZVec<double>& vec) {
+                 std::string r("TPZVecDouble [");
+                 r += std::to_string(vec[0]);
+                 for (int i = 1; i < vec.NElements(); i++) {
+                     r += ", ";
+                     r += std::to_string(vec[i]);
+                 }
+                 r += "]";
+                 return r;
+             }
+        )
+    ;
+
     // TPZManVector<double> bindings
-    py::class_<TPZManVector<double>>(m, "TPZVecDouble")
+    py::class_<TPZManVector<double>, TPZVec<double>>(m, "TPZManVecDouble")
         .def(py::init())
         .def(py::init<int64_t>())
         .def(py::init<int64_t, double>())
@@ -71,7 +118,7 @@ PYBIND11_MODULE(neopz, m) {
         )
         .def("__repr__",
              [](const TPZManVector<double>& vec) {
-                 std::string r("TPZVecDouble [");
+                 std::string r("TPZManVecDouble [");
                  r += std::to_string(vec[0]);
                  for (int i = 1; i < vec.NElements(); i++) {
                      r += ", ";
@@ -83,40 +130,75 @@ PYBIND11_MODULE(neopz, m) {
         )
     ;
 
-    // // chunk vector
-    //  py::class_<TPZChunkVector<double>>(m, "TPZVecDouble")
-    //     .def(py::init())
-    //     .def(py::init<int64_t>())
-    //     .def(py::init<int64_t, double>())
-    //     .def("Resize", [](TPZManVector<double>& vec, const int64_t& newsize) { return vec.Resize(newsize); })
-    //     .def("Size", [](const TPZManVector<double>& vec) { return vec.size(); })
-    //     .def("__getitem__",
-    //          [](const TPZManVector<double>& vec, int64_t position) {
-    //              if (position >= vec.size() || position < 0) throw py::index_error();
-    //              return vec[position];
-    //          },
-    //          py::is_operator()
-    //     )
-    //     .def("__setitem__",
-    //          [](TPZManVector<double>& vec, int64_t position, double value) {
-    //              if (position >= vec.size() || position < 0) throw py::index_error();
-    //              vec[position] = value;
-    //          },
-    //          py::is_operator()
-    //     )
-    //     .def("__repr__",
-    //          [](const TPZManVector<double>& vec) {
-    //              std::string r("TPZVecDouble [");
-    //              r += std::to_string(vec[0]);
-    //              for (int i = 1; i < vec.NElements(); i++) {
-    //                  r += ", ";
-    //                  r += std::to_string(vec[i]);
-    //              }
-    //              r += "]";
-    //              return r;
-    //          }
-    //     )
-    // ;
+    // TPZVec<int64_t> bindings
+    py::class_<TPZVec <int64_t>>(m, "TPZVecInt")
+        .def(py::init())
+        .def(py::init<int64_t>())
+        .def(py::init<int64_t, int64_t>())
+        .def("Resize", [](TPZVec<int64_t>& vec, const int64_t& newsize) { return vec.Resize(newsize); })
+        .def("Size", [](const TPZVec<int64_t>& vec) { return vec.size(); })
+        .def("__getitem__",
+             [](const TPZVec<int64_t>& vec, int64_t position) {
+                 if (position >= vec.size() || position < 0) throw py::index_error();
+                 return vec[position];
+             },
+             py::is_operator()
+        )
+        .def("__setitem__",
+             [](TPZVec<int64_t>& vec, int64_t position, int64_t value) {
+                 if (position >= vec.size() || position < 0) throw py::index_error();
+                 vec[position] = value;
+             },
+             py::is_operator()
+        )
+        .def("__repr__",
+             [](const TPZVec<int64_t>& vec) {
+                 std::string r("TPZVecInt [");
+                 r += std::to_string(vec[0]);
+                 for (int i = 1; i < vec.NElements(); i++) {
+                     r += ", ";
+                     r += std::to_string(vec[i]);
+                 }
+                 r += "]";
+                 return r;
+             }
+        )
+    ;
+
+    // TPZManVector<int> bindings
+    py::class_<TPZManVector<int64_t>, TPZVec<int64_t>>(m, "TPZManVecInt")
+        .def(py::init())
+        .def(py::init<int64_t>())
+        .def(py::init<int64_t, int64_t>())
+        .def("Resize", [](TPZManVector<int64_t>& vec, const int64_t& newsize) { return vec.Resize(newsize); })
+        .def("Size", [](const TPZManVector<int64_t>& vec) { return vec.size(); })
+        .def("__getitem__",
+             [](const TPZManVector<int64_t>& vec, int64_t position) {
+                 if (position >= vec.size() || position < 0) throw py::index_error();
+                 return vec[position];
+             },
+             py::is_operator()
+        )
+        .def("__setitem__",
+             [](TPZManVector<int64_t>& vec, int64_t position, double value) {
+                 if (position >= vec.size() || position < 0) throw py::index_error();
+                 vec[position] = value;
+             },
+             py::is_operator()
+        )
+        .def("__repr__",
+             [](const TPZManVector<int64_t>& vec) {
+                 std::string r("TPZManVecInt [");
+                 r += std::to_string(vec[0]);
+                 for (int i = 1; i < vec.NElements(); i++) {
+                     r += ", ";
+                     r += std::to_string(vec[i]);
+                 }
+                 r += "]";
+                 return r;
+             }
+        )
+    ;
     
     // TPZFMatrix<double> bindings
     py::class_<TPZFMatrix<double>>(m, "TPZFMatrix")
@@ -128,6 +210,13 @@ PYBIND11_MODULE(neopz, m) {
             if (col >= matrix.Cols() || col < 0) throw py::index_error();
             return matrix.GetVal(row, col);
         })
+        .def("SetItem",
+             [](TPZFMatrix<double>& mat, int64_t rows, int64_t cols, double value) {
+                 if (rows >= mat.Rows() || rows < 0) throw py::index_error();
+                 if (cols >= mat.Cols() || cols < 0) throw py::index_error();
+                 mat(rows,cols) = value;
+             }//,             py::is_operator()
+        )
         .def("__repr__",
              [](TPZFMatrix<double>& matrix) {
                  std::string r("TPZFMatrix ");
@@ -147,9 +236,8 @@ PYBIND11_MODULE(neopz, m) {
                  r += "]";
                  return r;
              }
-        )
-    ;
-
+        )    ;
+    
     // TPZStack<int> bindings
     py::class_<TPZStack<int>>(m, "TPZStackInt")
         .def(py::init())
@@ -175,6 +263,20 @@ PYBIND11_MODULE(neopz, m) {
                 r += "]";
                 return r;
             }
+        )
+    ;
+    
+    // TPZAdmChunkVectorNodes bindings
+    py::class_<TPZAdmChunkVector<TPZGeoNode>>(m, "TPZAdmChunkVectorNodes")
+        .def(py::init<int>())
+        .def("NElements", &TPZAdmChunkVector<TPZGeoNode>::NElements)
+        .def("Resize", &TPZAdmChunkVector<TPZGeoNode>::Resize)
+        .def("__getitem__",
+             [](const TPZAdmChunkVector<TPZGeoNode>& vec, int64_t position) {
+                 if (position >= vec.NElements() || position < 0) throw py::index_error();
+                 return vec[position];
+             },
+             py::is_operator()
         )
     ;
 
@@ -230,7 +332,6 @@ PYBIND11_MODULE(neopz, m) {
              }
         )
     ;
-    
 
     // TPZPoint bindings
     py::class_<pztopology::TPZPoint>(m, "TPZPoint")
@@ -390,6 +491,39 @@ PYBIND11_MODULE(neopz, m) {
         .def("Print", [](TPZGeoMesh &GeoMesh){ return GeoMesh.Print();})
         .def("BuildConnectivity", &TPZGeoMesh::BuildConnectivity)
         .def("NElements", &TPZGeoMesh::NElements)
+        .def("Dimension", &TPZGeoMesh::Dimension)
+        .def("NNodes", &TPZGeoMesh::NNodes)
+        .def("NodeVec", py::overload_cast<>(&TPZGeoMesh::NodeVec))
+        .def("NElements", &TPZGeoMesh::NElements)
+        .def("Element", &TPZGeoMesh::Element)
+    ;
+
+    // TPZGeoNode bindings
+    py::class_<TPZGeoNode>(m, "TPZGeoNode")
+        .def(py::init())
+        .def("GetCoordinates", &TPZGeoNode::GetCoordinates)
+    ;
+
+    // TPZGeoEl
+    py::class_<TPZGeoEl, std::unique_ptr<TPZGeoEl, py::nodelete>  >(m, "TPZGeoEl")
+        .def("NSides", &TPZGeoEl::NSides)
+        .def("NSideNodes", &TPZGeoEl::NSideNodes)
+        .def("SideNodeIndex", &TPZGeoEl::SideNodeIndex)
+        .def("SideDimension", &TPZGeoEl::SideDimension)
+        .def("Dimension", &TPZGeoEl::Dimension)
+        .def("Neighbour", &TPZGeoEl::Neighbour)
+    ;
+
+    // TPZGeoElBC
+    py::class_<TPZGeoElBC >(m, "TPZGeoElBC")
+        .def(py::init<TPZGeoEl*, int, int>())
+    ;
+
+    // TPZGeoElSide
+    py::class_<TPZGeoElSide, std::unique_ptr<TPZGeoElSide, py::nodelete> >(m, "TPZGeoElSide")
+        .def(py::init())
+        .def(py::init<TPZGeoEl*, int>())
+        .def("Neighbour", &TPZGeoElSide::Neighbour)
     ;
 
     // TPZGMshReader
@@ -398,141 +532,137 @@ PYBIND11_MODULE(neopz, m) {
         .def("GeometricGmshMesh3", &TPZGmshReader::GeometricGmshMesh3, "Reads geometric mesh from GMsh (3.x) .msh file.") 
         .def("GeometricGmshMesh4", &TPZGmshReader::GeometricGmshMesh4, "Reads geometric mesh from GMsh (4.x) .msh file.") 
     ;
+
     //TPZMaterial
     py::class_<TPZMaterial, std::unique_ptr<TPZMaterial, py::nodelete>>(m, "TPZMaterial")
-//    TPZMaterial.def("CreateBC", [](TPZMaterial *mat, int id, int type, TPZFMatrix<double> &val1, TPZFMatrix<double> &val2  ){ return mat->CreateBC(mat, id, type, val1, val2);})
-    .def("CreateBC", &TPZMaterial::CreateBC)
-    .def("SetId", &TPZMaterial::SetId)
-    
-    
+        .def("CreateBC", &TPZMaterial::CreateBC)
+        .def("SetId", &TPZMaterial::SetId)
     ;
-    
-//     TPZBndCond *TPZMaterial::CreateBC(TPZMaterial * reference, int id, int typ, TPZFMatrix<STATE> &val1, TPZFMatrix<STATE> &val2)
-    
-    
+
     py::class_<TPZBndCond, TPZMaterial , std::unique_ptr<TPZBndCond, py::nodelete>>(m, "TPZBndCond")
-    .def(py::init<>())
-    .def(py::init<int>())
-//    .def(py::init< TPZMaterial *,int ,int , TPZFMatrix<STATE> &,TPZFMatrix<STATE> &>())
-     .def(py::init< TPZMaterial * ,int ,int  , TPZFMatrix<STATE> & ,TPZFMatrix<STATE> & >())
+        .def(py::init<>())
+        .def(py::init<int>())
+        .def(py::init< TPZMaterial * ,int ,int  , TPZFMatrix<STATE> & ,TPZFMatrix<STATE> & >())
     ;
     
-    //TPZMaterial
-//    py::class_<TPZMatPoisson3d, TPZMaterial >(m, "TPZMatPoisson3d")
-    py::class_<TPZMatPoisson3d, TPZMaterial , std::unique_ptr<TPZMatPoisson3d, py::nodelete>>(m, "TPZMatPoisson3d")
+    py::class_<TPZMatPoisson3d, TPZMaterial, std::unique_ptr<TPZMatPoisson3d, py::nodelete>>(m, "TPZMatPoisson3d")
         .def(py::init<int, int>())
-    
     ;
 
     py::class_<TPZMatElasticity2D, TPZMaterial >(m, "TPZMatElasticity2D")
-            .def(py::init<int>())
-
-            ;
-
-  
+        .def(py::init<int>())
+    ;
     
+    py::class_<TPZElasticity3D, TPZMaterial, std::unique_ptr<TPZElasticity3D, py::nodelete>>(m, "TPZElasticity3D")
+        .def(py::init<int>())
+        .def("SetMaterialDataHook", & TPZElasticity3D::SetMaterialDataHook)
+    ;
+
     //
     py::class_<TPZCompMesh , std::unique_ptr<TPZCompMesh, py::nodelete>>(m, "TPZCompMesh")
-//    py::class_<TPZCompMesh >(m, "TPZCompMesh")
         .def(py::init())
         .def(py::init<TPZGeoMesh *>())
         .def("AutoBuild", [](TPZCompMesh &compmesh){ return compmesh.AutoBuild();})
-    
         .def("SetDimModel", &TPZCompMesh::SetDimModel )
-    
         .def("InsertMaterialObject", [](TPZCompMesh &compmesh, TPZMaterial *mat){ return compmesh.InsertMaterialObject(mat);} )
-    
         .def("SetAllCreateFunctionsContinuous", &TPZCompMesh::SetAllCreateFunctionsContinuous )
-    
         .def("NMaterials", &TPZCompMesh::NMaterials )
-    
         .def("NElements", &TPZCompMesh::NElements)
-    
         .def("Print", [](TPZCompMesh &compmesh){ return compmesh.Print();})
-    .def("SetDefaultOrder",&TPZCompMesh::SetDefaultOrder)
-    
-    
+        .def("SetDefaultOrder",&TPZCompMesh::SetDefaultOrder)
+        .def("FindMaterial", &TPZCompMesh::FindMaterial)
+        .def("NEquations", &TPZCompMesh::NEquations)
+        .def("__repr__",
+             [](TPZCompMesh & comp) {
+                 std::ofstream printstream;
+                 comp.Print(printstream);
+                 return printstream;
+             }
+        )
     ;
     
 
     py::class_<TPZMatrixSolver<STATE> >(m, "TPZMatrixSolver")
-  
-    
     ;
     
     py::class_<TPZStepSolver<STATE>, TPZMatrixSolver<STATE> >(m, "TPZStepSolver")
-    .def(py::init())
-    .def("SetDirect", &TPZStepSolver<STATE>::SetDirect)
-    
+        .def(py::init())
+        .def("SetDirect", &TPZStepSolver<STATE>::SetDirect)
     ;
     
     py::class_<TPZMatrix<double> > mat(m, "TPZMatrix")
-    
     ;
     
     py::enum_<DecomposeType>(m, "DecomposeType")
-    .value("ECholesky", DecomposeType::ECholesky)
-    .export_values();
-    
-    py::class_<TPZStructMatrix >(m, "TPZStructMatrix")
-    
-    
+        .value("ECholesky", DecomposeType::ECholesky)
+        .export_values()
     ;
-    
-    
-    
-    
+
+    py::class_<TPZStructMatrix >(m, "TPZStructMatrix")
+    ;
+
     py::class_<TPZSymetricSpStructMatrix, TPZStructMatrix >(m, "TPZSymetricSpStructMatrix")
-    
-    .def(py::init<TPZCompMesh *>())
-    .def("Create", [](TPZSymetricSpStructMatrix & spmatrix) {
-    })
-    .def("SetupMatrixData", [](TPZSymetricSpStructMatrix & spmatrix,TPZStack<int64_t> & elgraph, TPZVec<int64_t> &elgraphindex) {
-        return spmatrix.SetupMatrixData(elgraph, elgraphindex);
+        .def(py::init<TPZCompMesh *>())
+        .def("Create", [](TPZSymetricSpStructMatrix & spmatrix) {
+        })
+        .def("SetupMatrixData", [](TPZSymetricSpStructMatrix & spmatrix,TPZStack<int64_t> & elgraph, TPZVec<int64_t> &elgraphindex) {
+            return spmatrix.SetupMatrixData(elgraph, elgraphindex);
     })
     
     ;
 //
     py::class_<TPZVec<std::string> >(m, "TPZVecString")
-    .def(py::init())
-    .def(py::init<int64_t>())
-    .def(py::init<int64_t, std::string>())
-    
-    .def("__getitem__",
-         [](const TPZVec<std::string>& vec, int64_t position) {
-             if (position >= vec.size() || position < 0) throw py::index_error();
-             return vec[position];
-         },
-         py::is_operator()
-         )
-    .def("__setitem__",
-         [](TPZVec<std::string>& vec, int64_t position, std::string value) {
-             if (position >= vec.size() || position < 0) throw py::index_error();
-             vec[position] = value;
-         },
-         py::is_operator()
-         )
-
-    
-    
+        .def(py::init())
+        .def(py::init<int64_t>())
+        .def(py::init<int64_t, std::string>())
+        .def("__getitem__",
+             [](const TPZVec<std::string>& vec, int64_t position) {
+                 if (position >= vec.size() || position < 0) throw py::index_error();
+                 return vec[position];
+             },
+             py::is_operator()
+             )
+        .def("__setitem__",
+             [](TPZVec<std::string>& vec, int64_t position, std::string value) {
+                 if (position >= vec.size() || position < 0) throw py::index_error();
+                 vec[position] = value;
+             },
+             py::is_operator()
+             )
     ;
     //
     
     py::class_<TPZAnalysis >(m, "TPZAnalysis")
-    .def(py::init())
-    .def(py::init<TPZCompMesh *, bool>())
-    .def("SetStructuralMatrix",py::overload_cast<TPZStructMatrix &>(&TPZAnalysis::SetStructuralMatrix))
-    .def("SetSolver", &TPZAnalysis::SetSolver)
-    .def("Assemble", &TPZAnalysis::Assemble)
-    .def("Solve", &TPZAnalysis::Solve)
-    .def("DefineGraphMesh", py::overload_cast<int,const TPZVec<std::string> &,const TPZVec<std::string>&, const std::string &  >(&TPZAnalysis::DefineGraphMesh))
-    .def("PostProcess", py::overload_cast<int, int>(&TPZAnalysis::PostProcess))
-    
-//    void TPZAnalysis::DefineGraphMesh(int dimension, const TPZVec<std::string> &scalnames, const TPZVec<std::string> &vecnames, const std::string &plotfile)
-    
-    
+        .def(py::init())
+        .def(py::init<TPZCompMesh *, bool>())
+        .def("SetStructuralMatrix",py::overload_cast<TPZStructMatrix &>(&TPZAnalysis::SetStructuralMatrix))
+        .def("SetSolver", &TPZAnalysis::SetSolver)
+        .def("Assemble", &TPZAnalysis::Assemble)
+        .def("Solve", &TPZAnalysis::Solve)
+        .def("DefineGraphMesh", py::overload_cast<int,const TPZVec<std::string> &,const TPZVec<std::string>&, const std::string &  >(&TPZAnalysis::DefineGraphMesh))
+        .def("PostProcess", py::overload_cast<int, int>(&TPZAnalysis::PostProcess))
+        .def("NormRhs", &TPZAnalysis::NormRhs)
     ;
-  // .def("Mult", py::overload_cast<>(&TPZTransform<double>::Mult))
+
+    py::class_<TPZSBFemVolume, std::unique_ptr<TPZSBFemVolume, py::nodelete> >(m, "TPZSBFemVolume")
+        .def(py::init())
+        .def("ReadUNSWSBGeoFile", &TPZSBFemVolume::ReadUNSWSBGeoFile)
+    ;
+
+    // TPZGeoMesh bindings
+    py::class_<TPZVTKGeoMesh, std::unique_ptr<TPZVTKGeoMesh, py::nodelete>>(m, "TPZVTKGeoMesh")
+        .def(py::init())
+        .def_static("PrintGMeshVTK",  py::overload_cast<TPZGeoMesh*, const char *, int>(&TPZVTKGeoMesh::PrintGMeshVTK))
+    ;
+
+    py::bind_map<std::map<int, int>>(m, "MapIntInt");
+
+    // TPZBuildSBFem bindings
+    py::class_<TPZBuildSBFem, std::unique_ptr<TPZBuildSBFem, py::nodelete>>(m, "TPZBuildSBFem")
+        .def(py::init<TPZGeoMesh*, int, std::map<int,int> &>())
+        .def("SetPartitions", &TPZBuildSBFem::SetPartitions)
+        .def("BuildComputationalMeshFromSkeleton", &TPZBuildSBFem::BuildComputationalMeshFromSkeleton)
+    ;
     
 #ifdef VERSION_INFO
     m.attr("__version__") = VERSION_INFO;
