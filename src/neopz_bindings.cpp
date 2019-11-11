@@ -4,6 +4,7 @@
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
 
+
 namespace py = pybind11;
 using namespace py::literals;
 
@@ -32,7 +33,14 @@ using namespace py::literals;
 //
 #include "TPZSSpStructMatrix.h"
 #include "pzcmesh.h"
+#include "TPZFrontStructMatrix.h"
+#include "TPZParFrontStructMatrix.h"
+#include "TPZStructMatrixBase.h"
+#include "pzskylstrmatrix.h"
+#include "TPZSkylineNSymStructMatrix.h"
 
+#include "TPZBndCondWithMem.h" 
+#include "TPZBndCondWithMem_impl.h"
 //
 #include "TPZMaterial.h"
 #include "pzpoisson3d.h"
@@ -45,6 +53,17 @@ using namespace py::literals;
 #include "pzstepsolver.h"
 #include "pzstrmatrix.h"
 #include "pzmatrix.h"
+
+// Elastoplasticity 
+#include "TPZMatElastoPlastic2D.h"
+#include "TPZPlasticStepPV.h"
+#include "TPZYCMohrCoulombPV.h"
+#include "TPZElasticResponse.h"
+#include "TPZElastoPlasticMem.h"
+#include "TPZPlasticCriterion.h"
+#include "TPZTensor.h"
+#include "TPZPlasticState.h"
+#include "TPZBndCondWithMem.h"
 
 // For SBFEM simulations
 #include "TPZSBFemVolume.h"
@@ -236,9 +255,25 @@ PYBIND11_MODULE(neopz, m) {
                  r += "]";
                  return r;
              }
-        )    ;
-    
-    // TPZStack<int> bindings
+        )   
+
+        .def("Zero", & TPZFMatrix<double>::Zero)
+        .def("Cols", & TPZFMatrix<double>::Cols)
+        .def("Rows", & TPZFMatrix<double>::Rows)
+        .def("Resize", & TPZFMatrix<double>::Resize)
+        .def("SetSize", & TPZFMatrix<double>::SetSize)
+
+        .def(py::self + py::self)
+        .def(py::self += py::self)
+        .def(py::self *= float())
+
+            //Global Functions
+        .def("Norm", [](TPZFMatrix<double> &matrix){ return Norm(matrix);})
+        // .def("Norm", &TPZFMatrix<double>::Norm)
+
+         ;
+
+
     py::class_<TPZStack<int>>(m, "TPZStackInt")
         .def(py::init())
         .def(py::init<int, int>())
@@ -390,6 +425,7 @@ PYBIND11_MODULE(neopz, m) {
         .def_static("CreateSideIntegrationRule", &pztopology::TPZTriangle::CreateSideIntegrationRule)
     ;
 
+
     // TPZQuadrilateral bindings
     py::class_<pztopology::TPZQuadrilateral>(m, "TPZQuadrilateral")
         .def(py::init())
@@ -540,15 +576,77 @@ PYBIND11_MODULE(neopz, m) {
     ;
 
     py::class_<TPZBndCond, TPZMaterial , std::unique_ptr<TPZBndCond, py::nodelete>>(m, "TPZBndCond")
-        .def(py::init<>())
+        .def(py::init())
         .def(py::init<int>())
         .def(py::init< TPZMaterial * ,int ,int  , TPZFMatrix<STATE> & ,TPZFMatrix<STATE> & >())
     ;
-    
+
+
+    py::class_<TPZBndCondWithMem<TPZElastoPlasticMem>, TPZBndCond, std::unique_ptr<TPZBndCondWithMem<TPZElastoPlasticMem>, py::nodelete>>(m, "TPZBndCondWithMem")
+        .def(py::init())
+        .def(py::init< TPZMaterial * ,int ,int  , TPZFMatrix<STATE> & ,TPZFMatrix<STATE> & >())
+    ;
+
+
     py::class_<TPZMatPoisson3d, TPZMaterial, std::unique_ptr<TPZMatPoisson3d, py::nodelete>>(m, "TPZMatPoisson3d")
         .def(py::init<int, int>())
     ;
 
+    py::class_<TPZMatElastoPlastic< TPZPlasticStepPV<TPZYCMohrCoulombPV, TPZElasticResponse>, TPZElastoPlasticMem >, TPZMaterial, std::unique_ptr<TPZMatElastoPlastic< TPZPlasticStepPV<TPZYCMohrCoulombPV, TPZElasticResponse>, TPZElastoPlasticMem >, py::nodelete>>(m, "TPZMatElastoPlasticMC")
+        .def(py::init())
+    ;
+
+    py::class_<TPZMatWithMem<TPZElastoPlasticMem>, TPZMaterial, std::unique_ptr<TPZMatWithMem<TPZElastoPlasticMem>, py::nodelete>>(m, "TPZMatWithMem")
+    // .def("SetUpdateMem", & TPZMatWithMem::SetUpdateMem)
+    // .def("SetUpdateMem", [](TPZMatWithMem<TPZElastoPlasticMem> & plasticupdate){ return plasticupdate.SetUpdateMem;})
+    ;
+
+    py::class_<TPZMatElastoPlastic2D < TPZPlasticStepPV<TPZYCMohrCoulombPV, TPZElasticResponse>, TPZElastoPlasticMem >,TPZMatElastoPlastic< TPZPlasticStepPV<TPZYCMohrCoulombPV, TPZElasticResponse>, TPZElastoPlasticMem >, TPZMatWithMem<TPZElastoPlasticMem>, TPZMaterial, std::unique_ptr<TPZMatElastoPlastic2D < TPZPlasticStepPV<TPZYCMohrCoulombPV, TPZElasticResponse>, TPZElastoPlasticMem >, py::nodelete>>(m, "TPZMatElastoPlastic2DMC")
+        .def(py::init<int, int>())
+        .def("SetPlasticityModel", &TPZMatElastoPlastic2D < TPZPlasticStepPV<TPZYCMohrCoulombPV, TPZElasticResponse>, TPZElastoPlasticMem >::SetPlasticityModel)
+        .def("SetDefaultMem", &TPZMatElastoPlastic2D < TPZPlasticStepPV<TPZYCMohrCoulombPV, TPZElasticResponse>, TPZElastoPlasticMem >::SetDefaultMem)
+    ;
+
+    py::class_<TPZElasticResponse>(m, "TPZElasticResponse")
+        .def(py::init())
+        .def("SetEngineeringData", & TPZElasticResponse::SetEngineeringData)
+    ;
+
+    py::class_<TPZTensor<REAL>>(m, "TPZTensor")
+        .def(py::init())
+        .def("Zero", & TPZTensor<REAL>::Zero)
+    ;
+
+    py::class_<TPZPlasticState<STATE>>(m, "TPZPlasticState")
+        .def(py::init())
+    ;
+
+    py::class_<TPZElastoPlasticMem>(m, "TPZElastoPlasticMem")
+        .def(py::init())
+        .def("SetElasticResponse", & TPZElastoPlasticMem::SetElasticResponse)
+        .def("SetStress", & TPZElastoPlasticMem::SetStress)
+        .def("SetPlasticState", & TPZElastoPlasticMem::SetPlasticState)
+        // .def("sigma", [](TPZElastoPlasticMem & plasticmem){ return plasticmem.m_sigma;})
+        // .def("elastoplastic_state", [](TPZElastoPlasticMem & plasticmem){ return plasticmem.m_elastoplastic_state;})
+    ;
+
+    
+    py::class_<TPZPlasticCriterion, std::unique_ptr<TPZPlasticCriterion, py::nodelete>>(m, "TPZPlasticCriterion")
+    ;
+
+    py::class_<TPZYCMohrCoulombPV, TPZPlasticCriterion>(m, "TPZYCMohrCoulombPV")
+        .def(py::init())
+        .def("SetUp", & TPZYCMohrCoulombPV::SetUp)
+    ;
+
+    py::class_<TPZPlasticStepPV<TPZYCMohrCoulombPV, TPZElasticResponse>, std::unique_ptr<TPZPlasticStepPV<TPZYCMohrCoulombPV, TPZElasticResponse>, py::nodelete>>(m, "TPZPlasticStepPVMC")
+        .def(py::init())
+        .def("SetElasticResponse", & TPZPlasticStepPV<TPZYCMohrCoulombPV, TPZElasticResponse>::SetElasticResponse)
+        // .def("GetYC", & TPZPlasticStepPV<TPZYCMohrCoulombPV, TPZElasticResponse>::GetYC)
+        .def("YC", [](TPZPlasticStepPV<TPZYCMohrCoulombPV, TPZElasticResponse> & plasticstep){ return plasticstep.fYC;})
+        .def("fN", [](TPZPlasticStepPV<TPZYCMohrCoulombPV, TPZElasticResponse> & plasticstep){ return plasticstep.fN;})
+    ;
+ 
     py::class_<TPZMatElasticity2D, TPZMaterial >(m, "TPZMatElasticity2D")
         .def(py::init<int>())
     ;
@@ -557,21 +655,31 @@ PYBIND11_MODULE(neopz, m) {
         .def(py::init<int>())
         .def("SetMaterialDataHook", & TPZElasticity3D::SetMaterialDataHook)
     ;
+    
 
-    //
+    py::class_<TPZCreateApproximationSpace, std::unique_ptr<TPZCreateApproximationSpace, py::nodelete>>(m, "TPZCreateApproximationSpace")
+        .def(py::init())
+        .def("NeedsMemory", [](TPZCreateApproximationSpace &approximateSpace){ return approximateSpace.NeedsMemory();})
+        .def("CreateWithMemory", & TPZCreateApproximationSpace::CreateWithMemory) 
+    ;
+
+
     py::class_<TPZCompMesh , std::unique_ptr<TPZCompMesh, py::nodelete>>(m, "TPZCompMesh")
         .def(py::init())
         .def(py::init<TPZGeoMesh *>())
         .def("AutoBuild", [](TPZCompMesh &compmesh){ return compmesh.AutoBuild();})
         .def("SetDimModel", &TPZCompMesh::SetDimModel )
         .def("InsertMaterialObject", [](TPZCompMesh &compmesh, TPZMaterial *mat){ return compmesh.InsertMaterialObject(mat);} )
-        .def("SetAllCreateFunctionsContinuous", &TPZCompMesh::SetAllCreateFunctionsContinuous )
+        .def("SetAllCreateFunctionsContinuous", &TPZCompMesh::SetAllCreateFunctionsContinuous)
+        .def("SetAllCreateFunctionsContinuousWithMem", &TPZCompMesh::SetAllCreateFunctionsContinuousWithMem)  
         .def("NMaterials", &TPZCompMesh::NMaterials )
         .def("NElements", &TPZCompMesh::NElements)
         .def("Print", [](TPZCompMesh &compmesh){ return compmesh.Print();})
         .def("SetDefaultOrder",&TPZCompMesh::SetDefaultOrder)
         .def("FindMaterial", &TPZCompMesh::FindMaterial)
-        .def("NEquations", &TPZCompMesh::NEquations)
+        .def("NEquations", &TPZCompMesh::NEquations)                
+        .def("ApproxSpace", [](TPZCompMesh &compmesh){ return compmesh.ApproxSpace();})
+        .def("Solution", &TPZCompMesh::Solution) 
         .def("__repr__",
              [](TPZCompMesh & comp) {
                  std::ofstream printstream;
@@ -595,10 +703,35 @@ PYBIND11_MODULE(neopz, m) {
     
     py::enum_<DecomposeType>(m, "DecomposeType")
         .value("ECholesky", DecomposeType::ECholesky)
+        .value("ELDLt", DecomposeType::ELDLt)
+        .value("ELU", DecomposeType::ELU)
         .export_values()
     ;
 
     py::class_<TPZStructMatrix >(m, "TPZStructMatrix")
+    ;
+
+    py::class_<TPZSkylineStructMatrix, TPZStructMatrix >(m, "TPZSkylineStructMatrix")
+    .def(py::init<TPZCompMesh *>())
+    ;
+
+
+    py::class_<TPZSkylineNSymStructMatrix, TPZSkylineStructMatrix >(m, "TPZSkylineNSymStructMatrix")
+    .def(py::init<TPZCompMesh *>())
+    ;
+
+
+    py::class_<TPZFrontStructMatrix<TPZFrontSym<STATE> >, TPZStructMatrix>(m, "TPZFrontStructMatrix")
+    .def(py::init<TPZCompMesh *>())
+    ;
+
+    py::class_<TPZParFrontStructMatrix<TPZFrontSym<STATE> >, TPZFrontStructMatrix<TPZFrontSym<STATE> >>(m, "TPZParFrontStructMatrix")
+    .def(py::init<TPZCompMesh *>())
+    ;
+
+
+    py::class_<TPZStructMatrixBase >(m, "TPZStructMatrixBase")
+    .def("SetNumThreads", &TPZStructMatrixBase::SetNumThreads)
     ;
 
     py::class_<TPZSymetricSpStructMatrix, TPZStructMatrix >(m, "TPZSymetricSpStructMatrix")
@@ -607,8 +740,7 @@ PYBIND11_MODULE(neopz, m) {
         })
         .def("SetupMatrixData", [](TPZSymetricSpStructMatrix & spmatrix,TPZStack<int64_t> & elgraph, TPZVec<int64_t> &elgraphindex) {
             return spmatrix.SetupMatrixData(elgraph, elgraphindex);
-    })
-    
+    })   
     ;
 //
     py::class_<TPZVec<std::string> >(m, "TPZVecString")
@@ -637,12 +769,45 @@ PYBIND11_MODULE(neopz, m) {
         .def(py::init<TPZCompMesh *, bool>())
         .def("SetStructuralMatrix",py::overload_cast<TPZStructMatrix &>(&TPZAnalysis::SetStructuralMatrix))
         .def("SetSolver", &TPZAnalysis::SetSolver)
+        .def("LoadSolution", py::overload_cast<const TPZFMatrix<STATE> & >(&TPZAnalysis::LoadSolution))
+        .def("Solution", [](TPZAnalysis &sol){ return sol.Solution();})
         .def("Assemble", &TPZAnalysis::Assemble)
+        .def("AssembleResidual", &TPZAnalysis::AssembleResidual)
         .def("Solve", &TPZAnalysis::Solve)
         .def("DefineGraphMesh", py::overload_cast<int,const TPZVec<std::string> &,const TPZVec<std::string>&, const std::string &  >(&TPZAnalysis::DefineGraphMesh))
+        .def("DefineGraphMesh", py::overload_cast<int,const TPZVec<std::string> &,const TPZVec<std::string>&, const TPZVec<std::string>&, const std::string &  >(&TPZAnalysis::DefineGraphMesh))
         .def("PostProcess", py::overload_cast<int, int>(&TPZAnalysis::PostProcess))
         .def("NormRhs", &TPZAnalysis::NormRhs)
+        .def("Mesh", &TPZAnalysis::Mesh)
+        .def("AcceptPseudoTimeStepSolution",[](TPZAnalysis & self){
+            TPZCompMesh *cmesh = self.Mesh();
+            bool update = true;
+            {
+                std::map<int, TPZMaterial *> &refMatVec = cmesh->MaterialVec();
+                TPZMatWithMem<TPZElastoPlasticMem> * pMatWithMem;
+                for(auto mit = refMatVec.begin(); mit != refMatVec.end(); mit++){
+                    pMatWithMem = dynamic_cast<TPZMatWithMem<TPZElastoPlasticMem> *>(mit->second);
+                    if(pMatWithMem != NULL){
+                        pMatWithMem->SetUpdateMem(update);
+                    }
+                }
+            }
+            self.AssembleResidual();
+            update = false;
+            {
+                std::map<int, TPZMaterial *> &refMatVec = cmesh->MaterialVec();
+                TPZMatWithMem<TPZElastoPlasticMem> * pMatWithMem;
+                for(auto mit = refMatVec.begin(); mit != refMatVec.end(); mit++){
+                    pMatWithMem = dynamic_cast<TPZMatWithMem<TPZElastoPlasticMem> *>(mit->second);
+                    if(pMatWithMem != NULL){
+                        pMatWithMem->SetUpdateMem(update);
+                    }
+                }
+            }
+        })
     ;
+
+
 
     py::class_<TPZSBFemVolume, std::unique_ptr<TPZSBFemVolume, py::nodelete> >(m, "TPZSBFemVolume")
         .def(py::init())
@@ -663,7 +828,8 @@ PYBIND11_MODULE(neopz, m) {
         .def("SetPartitions", &TPZBuildSBFem::SetPartitions)
         .def("BuildComputationalMeshFromSkeleton", &TPZBuildSBFem::BuildComputationalMeshFromSkeleton)
     ;
-    
+
+
 #ifdef VERSION_INFO
     m.attr("__version__") = VERSION_INFO;
 #else
