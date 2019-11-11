@@ -642,6 +642,8 @@ PYBIND11_MODULE(neopz, m) {
         .def("DefineGraphMesh", py::overload_cast<int,const TPZVec<std::string> &,const TPZVec<std::string>&, const std::string &  >(&TPZAnalysis::DefineGraphMesh))
         .def("PostProcess", py::overload_cast<int, int>(&TPZAnalysis::PostProcess))
         .def("NormRhs", &TPZAnalysis::NormRhs)
+        .def("SetExact", &TPZAnalysis::SetExact)
+        .def("SetForcingFunction", &TPZAnalysis::SetForcingFunction)
     ;
 
     py::class_<TPZSBFemVolume, std::unique_ptr<TPZSBFemVolume, py::nodelete> >(m, "TPZSBFemVolume")
