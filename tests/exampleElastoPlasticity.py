@@ -84,7 +84,7 @@ du  = an.Solution()
 
 an.Assemble()
 
-nit = 2
+nit = 10
 tol = 1e-7
 
 
@@ -101,13 +101,18 @@ for it in range(nit):
 	an.Assemble()
 
 	norm_res = an.NormRhs()
-	stop_criterion = norm_res < tol
+	stop_criterion = (norm_res < tol and norm_du < tol)
+	print("Nonlinear process: delta_u norm =  ", norm_du)
 	print("Nonlinear process: residue norm =  ", norm_res)
 
 	if stop_criterion:
 		an.AcceptPseudoTimeStepSolution();
+		norm_res = an.NormRhs()
+		print("Nonlinear process converged with residue norm =  ", norm_res)
+		print("Number of iterations = ", it+1)
 		break
 	else:
+		an.AcceptPseudoTimeStepSolution();
 		print("# The process needs more number of iterations? #")
 
 
