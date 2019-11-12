@@ -58,6 +58,9 @@ using namespace py::literals;
 #include "pzstepsolver.h"
 #include "pzpostprocanalysis.h"
 
+#include "pzsolve.h"
+#include "tpzautopointer.h"
+
 // Elastoplasticity 
 #include "TPZBndCondWithMem.h" 
 #include "TPZBndCondWithMem_impl.h"
@@ -278,6 +281,19 @@ PYBIND11_MODULE(neopz, m) {
         // .def("Norm", &TPZFMatrix<double>::Norm)
 
          ;
+
+
+    py::class_<TPZMatrix<double> >(m, "TPZMatrix")
+        // .def(py::init<>())
+        .def("SetIsDecomposed", & TPZMatrix<double>::SetIsDecomposed)
+        
+        .def("__repr__", [](TPZMatrix<double> &matrix){
+                std::ofstream printstream;
+                matrix.Print("Matrix = ", printstream);
+                return printstream;
+            }
+        )
+    ;
 
 
     py::class_<TPZStack<int>>(m, "TPZStackInt")
@@ -697,17 +713,9 @@ PYBIND11_MODULE(neopz, m) {
     ;
     
 
-    py::class_<TPZMatrixSolver<STATE> >(m, "TPZMatrixSolver")
-    ;
     
-    py::class_<TPZStepSolver<STATE>, TPZMatrixSolver<STATE> >(m, "TPZStepSolver")
-        .def(py::init())
-        .def("SetDirect", &TPZStepSolver<STATE>::SetDirect)
-    ;
     
-    py::class_<TPZMatrix<double> > mat(m, "TPZMatrix")
-    ;
-    
+
     py::enum_<DecomposeType>(m, "DecomposeType")
         .value("ECholesky", DecomposeType::ECholesky)
         .value("ELDLt", DecomposeType::ELDLt)
@@ -716,20 +724,29 @@ PYBIND11_MODULE(neopz, m) {
     ;
 
     py::class_<TPZStructMatrix >(m, "TPZStructMatrix")
+        // .def("__repr__",
+        //      [](TPZStructMatrix & matrix) {
+        //          std::ofstream printstream;
+        //          matrix.Print(printstream);
+        //          return printstream;
+        //      }
+        // )
     ;
 
     py::class_<TPZFStructMatrix,TPZStructMatrix >(m, "TPZFStructMatrix")
+
         .def(py::init<TPZCompMesh *>())
     ;
 
 
     py::class_<TPZSkylineStructMatrix, TPZStructMatrix >(m, "TPZSkylineStructMatrix")
-    .def(py::init<TPZCompMesh *>())
+        
+        .def(py::init<TPZCompMesh *>())
     ;
 
 
     py::class_<TPZSkylineNSymStructMatrix, TPZSkylineStructMatrix >(m, "TPZSkylineNSymStructMatrix")
-    .def(py::init<TPZCompMesh *>())
+        .def(py::init<TPZCompMesh *>())
     ;
 
 
@@ -781,6 +798,23 @@ PYBIND11_MODULE(neopz, m) {
         .def(py::init<TPZCompMesh *, bool>())
         .def("SetStructuralMatrix",py::overload_cast<TPZStructMatrix &>(&TPZAnalysis::SetStructuralMatrix))
         .def("SetSolver", &TPZAnalysis::SetSolver)
+        // .def("Solver", &TPZAnalysis::Solver)
+        // .def("Solver", [](TPZAnalysis &self) ->TPZMatrixSolver<STATE>& {
+        //     return self.Solver();
+        // })
+        .def("PrintMatrix", [](TPZAnalysis &self){
+            self.Solver().Matrix()->Print("K = ",std::cout,EMathematicaInput);
+            return 0;
+        })
+
+          .def("PrintRhs", [](TPZAnalysis &self){
+            self.Rhs().Print("R = ", std::cout,EMathematicaInput);
+            return 0;
+        })
+        .def("SetStructMatrixDecomposed", [](TPZAnalysis &self, bool key = true){
+            self.Solver().Matrix()->SetIsDecomposed(key);
+            return key;
+        })
         .def("LoadSolution", py::overload_cast<const TPZFMatrix<STATE> & >(&TPZAnalysis::LoadSolution))
         .def("Solution", [](TPZAnalysis &sol){ return sol.Solution();})
         .def("Assemble", &TPZAnalysis::Assemble)
@@ -791,6 +825,8 @@ PYBIND11_MODULE(neopz, m) {
         .def("PostProcess", py::overload_cast<int, int>(&TPZAnalysis::PostProcess))
         .def("NormRhs", &TPZAnalysis::NormRhs)
         .def("Mesh", &TPZAnalysis::Mesh)
+        .def("Rhs",&TPZAnalysis::Rhs)
+        .def("SetRhs", &TPZAnalysis::SetRhs)
         .def("AcceptPseudoTimeStepSolution",[](TPZAnalysis & self){
             TPZCompMesh *cmesh = self.Mesh();
             bool update = true;
@@ -819,6 +855,30 @@ PYBIND11_MODULE(neopz, m) {
         })
     ;
 
+
+    py::class_<TPZAutoPointer<STATE> >(m, "TPZAutoPointer")
+
+    ;
+
+
+    py::class_<TPZSolver<STATE> >(m, "TPZSolver")
+    ;
+
+    py::class_<TPZMatrixSolver<STATE>, TPZSolver<STATE> >(m, "TPZMatrixSolver")
+ 
+        .def("Matrix", [](TPZMatrixSolver<STATE> & self) ->TPZMatrix<STATE>&  {
+            // TPZMatrix<STATE> matrix 
+            // matrix = *(self.Matrix().operator->());
+            return *(self.Matrix().operator->());
+        })
+
+    ;
+
+    
+    py::class_<TPZStepSolver<STATE>, TPZMatrixSolver<STATE> >(m, "TPZStepSolver")
+        .def(py::init())
+        .def("SetDirect", &TPZStepSolver<STATE>::SetDirect)
+    ;
 
     py::class_<TPZPostProcAnalysis, TPZAnalysis> (m,"TPZPostProcAnalysis")
         .def(py::init())

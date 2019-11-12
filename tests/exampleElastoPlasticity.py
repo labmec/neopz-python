@@ -4,7 +4,7 @@ import math
 # Functions to add geometry
 gmesh = TPZGeoMesh()
 read = TPZGmshReader()
-gmesh = read.GeometricGmshMesh4("tests/geometric-mesh/wellbore_mix.msh", gmesh)
+gmesh = read.GeometricGmshMesh4("tests/geometric-mesh/wellbore.msh", gmesh)
 gmesh.BuildConnectivity()
 
 # Functions to add computational mesh
@@ -68,34 +68,46 @@ cmesh.AutoBuild()
 
 # Functions to do analysis
 an = TPZAnalysis(cmesh,1)
-struc_mat = TPZSymetricSpStructMatrix(cmesh)
+# struc_mat = TPZSymetricSpStructMatrix(cmesh)
 # struc_mat = TPZParFrontStructMatrix(cmesh)
 # struc_mat = TPZSkylineStructMatrix(cmesh)
-# struc_mat = TPZSkylineNSymStructMatrix(cmesh)
+struc_mat = TPZSkylineNSymStructMatrix(cmesh)
 
 an.SetStructuralMatrix(struc_mat)
 stepsol = TPZStepSolver()
 
-stepsol.SetDirect(ELDLt)
+# stepsol.SetDirect(ELDLt)
 # stepsol.SetDirect(ECholesky)
-# stepsol.SetDirect(ELU)
+stepsol.SetDirect(ELU)
 
 an.SetSolver(stepsol)
-
 sol = an.Solution()
 sol.Zero()
 an.LoadSolution(sol)
 du  = an.Solution()
-
 an.Assemble()
 
-nit = 30
-tol = 0.00001
-
+nit = 5
+tol = 1e-7
 
 for it in range(nit):
+
+	an.Assemble()
 	print("iteration # ",it)
+
+# New structure
+	an.SetStructMatrixDecomposed(False)
+	rn = an.Rhs()
+	rn *= 1.0
+	an.SetRhs(rn)
+# New structure
+
+	# an.PrintRhs()
+
 	an.Solve()
+
+	# an.PrintMatrix()
+
 	dmsh = an.Mesh()
 	ddu  = dmsh.Solution()
 	du   = ddu+du
@@ -108,6 +120,7 @@ for it in range(nit):
 	an.Assemble()
 	# print(ddu)
 	# print(du)
+
 
 	norm_res = an.NormRhs()
 	stop_criterion = (norm_res < tol and norm_du < tol)
@@ -154,9 +167,6 @@ post.TransferSolution()
 post.DefineGraphMesh(2,scalnames,vecnames, tensnames, name)
 post.PostProcess(0,2)
 
-
-# an.DefineGraphMesh(2,scalnames,vecnames, tensnames, name)
-# an.PostProcess(0,2)
 print("# End of Simulation! #")
 
 
