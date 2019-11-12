@@ -1,8 +1,11 @@
 from neopz import*
 gmesh = TPZGeoMesh()
 read = TPZGmshReader()
-gmesh = read.GeometricGmshMesh4("geometric-mesh/simple_2D_coarse.msh", gmesh)
+gmesh = read.GeometricGmshMesh4("tests/geometric-mesh/simple_2D_coarse.msh", gmesh)
 gmesh.BuildConnectivity()
+
+
+
 mat = TPZMatPoisson3d(1,2)
 cmesh = TPZCompMesh(gmesh)
 val = cmesh.InsertMaterialObject(mat)
@@ -28,6 +31,8 @@ cmesh.SetAllCreateFunctionsContinuous()
 cmesh.SetDefaultOrder(1)
 cmesh.AutoBuild()
 
+
+
 an = TPZAnalysis(cmesh, 1)
 struc_mat = TPZSymetricSpStructMatrix(cmesh)
 an.SetStructuralMatrix(struc_mat)
@@ -45,11 +50,3 @@ vecnames[0]="Flux"
 
 an.DefineGraphMesh(2,scalnames,vecnames, name)
 an.PostProcess(0,2)
-
-
-
-
-
-
-
-

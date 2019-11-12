@@ -1,0 +1,10 @@
+Metadata-Version: 1.0
+Name: neopz
+Version: 0.0.1
+Summary: A test project using pybind11 and CMake
+Home-page: UNKNOWN
+Author: Gustavo Batistela
+Author-email: gustavoabatistela@gmail.com
+License: UNKNOWN
+Description: UNKNOWN
+Platform: UNKNOWN
