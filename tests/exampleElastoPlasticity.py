@@ -2,15 +2,15 @@ from neopz import *
 import math
 gmesh = TPZGeoMesh()
 read = TPZGmshReader()
-gmesh = read.GeometricGmshMesh4("tests/geometric-mesh/wellbore.msh", gmesh)
+gmesh = read.GeometricGmshMesh4("tests/geometric-mesh/wellbore_mix.msh", gmesh)
 gmesh.BuildConnectivity()
-mat = TPZMatElastoPlastic2DMC(1,2)
+mat = TPZMatElastoPlastic2DMC(1,1)
 cmesh = TPZCompMesh(gmesh)
 cmesh.SetDefaultOrder(1)
 dim = gmesh.Dimension()
 
 # Material properties
-cohesion = 5
+cohesion = 5.0
 phi = 20*math.pi/180
 E = 2000
 nu = 0.2
@@ -74,7 +74,6 @@ stepsol.SetDirect(ELDLt)
 # stepsol.SetDirect(ECholesky)
 # stepsol.SetDirect(ELU)
 
-
 an.SetSolver(stepsol)
 
 sol = an.Solution()
@@ -84,8 +83,8 @@ du  = an.Solution()
 
 an.Assemble()
 
-nit = 10
-tol = 1e-7
+nit = 300
+tol = 0.00001
 
 
 for it in range(nit):
@@ -98,7 +97,11 @@ for it in range(nit):
 	print("norm_du",norm_du)
 
 	an.LoadSolution(du)
+	# print(ddu)
+	# print(du)
 	an.Assemble()
+	# print(ddu)
+	# print(du)
 
 	norm_res = an.NormRhs()
 	stop_criterion = (norm_res < tol and norm_du < tol)
@@ -115,14 +118,35 @@ for it in range(nit):
 		an.AcceptPseudoTimeStepSolution();
 		print("# The process needs more number of iterations? #")
 
+post = TPZPostProcAnalysis()
+post.SetCompMesh(cmesh,True)
+post_mat_id = TPZVecInt(1,mat.Id())
 
-# name = str("elastoplasticWellbore.vtk")
-# scalnames = TPZVecString(1)
-# vecnames = TPZVecString(1)
-# tensnames = TPZVecString(1)
-# scalnames[0]="FailureType"
-# vecnames[0] ="Displacement"
-# tensnames[0]="Stress"
+name = str("elastoplasticWellbore.vtk")
+scalnames = TPZVecString(1)
+vecnames = TPZVecString(1)
+tensnames = TPZVecString(3)
+scalnames[0]="FailureType"
+vecnames[0] ="Displacement"
+tensnames[0]="Stress"
+tensnames[1]="Strain"
+tensnames[2]="StrainPlastic"
+
+names = TPZVecString(5)
+names[0] = scalnames[0]
+names[1] = vecnames[0]
+names[2] = tensnames[0]
+names[3] = tensnames[1]
+names[4] = tensnames[2]
+
+
+post.SetPostProcessVariables(post_mat_id,names)
+smatrix = TPZFStructMatrix(post.Mesh())
+post.SetStructuralMatrix(smatrix)
+post.TransferSolution()
+post.DefineGraphMesh(2,scalnames,vecnames, tensnames, name)
+post.PostProcess(0,2)
+
 
 # an.DefineGraphMesh(2,scalnames,vecnames, tensnames, name)
 # an.PostProcess(0,2)
