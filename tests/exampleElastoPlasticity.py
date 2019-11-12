@@ -1,9 +1,13 @@
 from neopz import *
 import math
+
+# Functions to add geometry
 gmesh = TPZGeoMesh()
 read = TPZGmshReader()
 gmesh = read.GeometricGmshMesh4("tests/geometric-mesh/wellbore_mix.msh", gmesh)
 gmesh.BuildConnectivity()
+
+# Functions to add computational mesh
 mat = TPZMatElastoPlastic2DMC(1,1)
 cmesh = TPZCompMesh(gmesh)
 cmesh.SetDefaultOrder(1)
@@ -15,6 +19,7 @@ phi = 20*math.pi/180
 E = 2000
 nu = 0.2
 
+# Functions to add elasoplastic material
 LER = TPZElasticResponse()
 LER.SetEngineeringData(E,nu)
 LEMC = TPZPlasticStepPVMC()
@@ -32,6 +37,7 @@ mat.SetPlasticityModel(LEMC)
 mat.SetDefaultMem(default_mem)
 cmesh.InsertMaterialObject(mat)
 
+# Functions to add boundary conditions
 # D_Type = 0
 # N_Type = 1
 val1 = TPZFMatrix(dim,dim,0.0)
@@ -58,9 +64,9 @@ cmesh.InsertMaterialObject(bc_uy_fixed)
 cmesh.SetDimModel(2)
 cmesh.SetAllCreateFunctionsContinuousWithMem()
 cmesh.ApproxSpace().CreateWithMemory(1)
-
 cmesh.AutoBuild()
 
+# Functions to do analysis
 an = TPZAnalysis(cmesh,1)
 struc_mat = TPZSymetricSpStructMatrix(cmesh)
 # struc_mat = TPZParFrontStructMatrix(cmesh)
@@ -83,7 +89,7 @@ du  = an.Solution()
 
 an.Assemble()
 
-nit = 300
+nit = 30
 tol = 0.00001
 
 
@@ -118,6 +124,7 @@ for it in range(nit):
 		an.AcceptPseudoTimeStepSolution();
 		print("# The process needs more number of iterations? #")
 
+# Functions to do post process
 post = TPZPostProcAnalysis()
 post.SetCompMesh(cmesh,True)
 post_mat_id = TPZVecInt(1,mat.Id())
