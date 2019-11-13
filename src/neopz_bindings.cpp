@@ -35,7 +35,7 @@ using namespace py::literals;
 #include "pzgeoelside.h"
 
 #include "pzcmesh.h"
-
+#include "pzfunction.h"
 // Matrix
 #include "pzmatrix.h"
 
@@ -64,17 +64,17 @@ using namespace py::literals;
 #include "tpzautopointer.h"
 
 // Elastoplasticity 
-#include "TPZBndCondWithMem.h" 
-#include "TPZBndCondWithMem_impl.h"
-#include "TPZMatElastoPlastic2D.h"
-#include "TPZPlasticStepPV.h"
-#include "TPZYCMohrCoulombPV.h"
-#include "TPZElasticResponse.h"
-#include "TPZElastoPlasticMem.h"
-#include "TPZPlasticCriterion.h"
-#include "TPZTensor.h"
-#include "TPZPlasticState.h"
-#include "TPZBndCondWithMem.h"
+//#include "TPZBndCondWithMem.h"
+//#include "TPZBndCondWithMem_impl.h"
+//#include "TPZMatElastoPlastic2D.h"
+//#include "TPZPlasticStepPV.h"
+//#include "TPZYCMohrCoulombPV.h"
+//#include "TPZElasticResponse.h"
+//#include "TPZElastoPlasticMem.h"
+//#include "TPZPlasticCriterion.h"
+//#include "TPZTensor.h"
+//#include "TPZPlasticState.h"
+//#include "TPZBndCondWithMem.h"
 
 // For SBFEM simulations
 #include "TPZSBFemVolume.h"
@@ -570,6 +570,47 @@ PYBIND11_MODULE(neopz, m) {
         .def("CreateBC", &TPZMaterial::CreateBC)
         .def("SetId", &TPZMaterial::SetId)
         .def("Id", &TPZMaterial::Id)
+        .def("SetForcingFunctionExact", [](TPZMaterial &mat, std::function<void(const TPZVec<REAL> &loc, TPZVec<STATE> &result, TPZFMatrix<STATE> &deriv)> &function){
+            TPZAutoPointer<TPZFunction<STATE> > sourceterm ;
+            sourceterm =  new TPZDummyFunction<double>(function,10);
+            mat.SetForcingFunctionExact(sourceterm);
+//            TPZAutoPointer<TPZDummyFunction<STATE>> fun = function;
+        })
+//        .def("SetForcingFunctionExact2", [](TPZMaterial &self){
+//            std::function<void(const TPZVec<REAL> &loc, TPZVec<STATE> &result, TPZFMatrix<STATE> &deriv)>
+//            Sol_exact = [](const TPZVec<REAL> &x, TPZVec<STATE> &sol, TPZFMatrix<STATE> &dsol){
+//                dsol.Resize(2,1);
+//                sol.resize(1);
+//                sol[0]=1.0;
+//                dsol.Zero();
+//
+//                //                    REAL xv = x[0];
+//                //                    REAL yv = x[1];
+//                //                //  REAL zv = x[2];
+//                //
+//                //                    REAL v_x =  cos(2*M_PI*yv)*sin(2*M_PI*xv);
+//                //                    REAL v_y =  -(cos(2*M_PI*xv)*sin(2*M_PI*yv));
+//                //
+//                //                    sol[0]=v_x;
+//                //                    sol[1]=v_y;
+//                //
+//                //                    // vx direction
+//                //                    dsol(0,0)= 2*M_PI*cos(2*M_PI*xv)*cos(2*M_PI*yv);
+//                //                    dsol(0,1)= 2*M_PI*sin(2*M_PI*xv)*sin(2*M_PI*yv);
+//                //
+//                //
+//                //                    // vy direction
+//                //                    dsol(1,0)= -2*M_PI*sin(2*M_PI*xv)*sin(2*M_PI*yv);
+//                //                    dsol(1,1)= -2*M_PI*cos(2*M_PI*xv)*cos(2*M_PI*yv);
+//                //
+//            };
+//            TPZAutoPointer<TPZFunction<STATE> > sourceterm ;
+//            sourceterm =  new TPZDummyFunction<double>(Sol_exact,10);
+//
+//            self.SetExact(Sol_exact);
+//            self.Mesh()->ElementSolution().Redim(self.Mesh()->NElements(),9);
+//            return 0;
+//        })
     ;
 
     py::class_<TPZBndCond, TPZMaterial , std::unique_ptr<TPZBndCond, py::nodelete>>(m, "TPZBndCond")
@@ -691,30 +732,31 @@ PYBIND11_MODULE(neopz, m) {
         .def("SetExact2", [](TPZAnalysis &self){
             std::function<void(const TPZVec<REAL> &loc, TPZVec<STATE> &result, TPZFMatrix<STATE> &deriv)>
                 Sol_exact = [](const TPZVec<REAL> &x, TPZVec<STATE> &sol, TPZFMatrix<STATE> &dsol){
-                    dsol.Resize(3,3);
-                    sol.resize(3);
+                    dsol.Resize(2,1);
+                    sol.resize(1);
+                    sol[0]=1.0;
                     dsol.Zero();
                     
-                    REAL xv = x[0];
-                    REAL yv = x[1];
-                //  REAL zv = x[2];
-                    
-                    REAL v_x =  cos(2*M_PI*yv)*sin(2*M_PI*xv);
-                    REAL v_y =  -(cos(2*M_PI*xv)*sin(2*M_PI*yv));
-                    
-                    sol[0]=v_x;
-                    sol[1]=v_y;
-                    
-                    // vx direction
-                    dsol(0,0)= 2*M_PI*cos(2*M_PI*xv)*cos(2*M_PI*yv);
-                    dsol(0,1)= 2*M_PI*sin(2*M_PI*xv)*sin(2*M_PI*yv);
-
-                    
-                    // vy direction
-                    dsol(1,0)= -2*M_PI*sin(2*M_PI*xv)*sin(2*M_PI*yv);
-                    dsol(1,1)= -2*M_PI*cos(2*M_PI*xv)*cos(2*M_PI*yv);
-                    
-                };
+//                    REAL xv = x[0];
+//                    REAL yv = x[1];
+//                //  REAL zv = x[2];
+//
+//                    REAL v_x =  cos(2*M_PI*yv)*sin(2*M_PI*xv);
+//                    REAL v_y =  -(cos(2*M_PI*xv)*sin(2*M_PI*yv));
+//
+//                    sol[0]=v_x;
+//                    sol[1]=v_y;
+//
+//                    // vx direction
+//                    dsol(0,0)= 2*M_PI*cos(2*M_PI*xv)*cos(2*M_PI*yv);
+//                    dsol(0,1)= 2*M_PI*sin(2*M_PI*xv)*sin(2*M_PI*yv);
+//
+//
+//                    // vy direction
+//                    dsol(1,0)= -2*M_PI*sin(2*M_PI*xv)*sin(2*M_PI*yv);
+//                    dsol(1,1)= -2*M_PI*cos(2*M_PI*xv)*cos(2*M_PI*yv);
+//
+               };
 
                 self.SetExact(Sol_exact);
                 self.Mesh()->ElementSolution().Redim(self.Mesh()->NElements(),9);

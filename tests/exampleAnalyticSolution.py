@@ -2,42 +2,12 @@ from neopz import*
 import math as math
 
 # Exact solution for Poisson 2D
-def Sol_exact(x = TPZManVecDouble(), sol = TPZManVecDouble(), dsol = TPZFMatrix() ):
-
+def F_source(x = TPZManVecDouble(), sol = TPZManVecDouble(), dsol = TPZFMatrix() ):
 	dsol.Resize(3,3)
 	sol.Resize(3)
 	dsol.Zero()
-	
-	# xv = x[0]
-	# yv = x[1]
-	# # zv = x[2]
-	
-	Pi = math.pi
-	
-	v_x =  1
-	v_y =  -1
-	
-	sol[0]=v_x
-	sol[1]=v_y
+#    sol.SetItem(0,1.0)
 
-	# vx direction
-	dsol.SetItem(0,0,1)
-	dsol.SetItem(0,1,1)
-	
-	
-	# vy direction
-	dsol.SetItem(1,0,1)
-	dsol.SetItem(1,1,1)
-
-	# # vz direction
-	# dsol.SetItem(2,0,0)
-	# dsol.SetItem(2,1,0)
-
-	# v_z = 0
-	# sol[2]=v_z
-	# dsol.SetItem(0,2,0)
-	# dsol.SetItem(1,2,0)
-	# dsol.SetItem(2,2,0)
 
 
 # MAIN
@@ -46,6 +16,7 @@ read = TPZGmshReader()
 gmesh = read.GeometricGmshMesh4("tests/geometric-mesh/simple_2D.msh", gmesh)
 gmesh.BuildConnectivity()
 mat = TPZMatLaplacian(1,2)
+mat.SetForcingFunctionExact(F_source)
 cmesh = TPZCompMesh(gmesh)
 val = cmesh.InsertMaterialObject(mat)
 
@@ -65,11 +36,11 @@ val4 = TPZFMatrix(1,1,10.0)
 bc_3 = mat.CreateBC(mat, 5,D_Type,val1,val4)
 cmesh.InsertMaterialObject(bc_3)
 
-val5 = TPZFMatrix(2,1,0.0)
-val5.SetItem(0,0, 0)
-val5.SetItem(1,0, 1)
-bc_uy_fixed = mat.CreateBC(mat,6,D_Type, val1, val5)
-cmesh.InsertMaterialObject(bc_uy_fixed)
+#val5 = TPZFMatrix(2,1,0.0)
+#val5.SetItem(0,0, 0)
+#val5.SetItem(1,0, 1)
+#bc_uy_fixed = mat.CreateBC(mat,6,D_Type, val1, val5)
+#cmesh.InsertMaterialObject(bc_uy_fixed)
 
 cmesh.SetDimModel(2)
 
@@ -87,7 +58,7 @@ an.Assemble()
 an.Solve()
 print(an.Solution())
 # an.SetExact(Sol_exact)
-an.SetExact2()
+#an.SetExact2()
 
 # an.SetForcingFunction(F_source)
 
@@ -108,7 +79,7 @@ vecnames[0]="Flux"
 
 # Functions to do post process
 post = TPZPostProcAnalysis()
-post.SetCompMesh(cmesh,True)
+post.SetCompMesh(cmesh,False)
 post_mat_id = TPZVecInt(1,mat.Id())
 
 tensname = TPZVecString(1,"state")
@@ -122,7 +93,7 @@ post.SetPostProcessVariables(post_mat_id,names)
 smatrix = TPZFStructMatrix(post.Mesh())
 post.SetStructuralMatrix(smatrix)
 post.TransferSolution()
-print("\nIt's on a destructor!!!!\n\n")
+#print("\nIt's on a destructor!!!!\n\n")
 post.DefineGraphMesh(2,scalnames,vecnames, "resultado.vtk")
 post.PostProcess(0,2)
 
@@ -159,32 +130,6 @@ post.PostProcess(0,2)
 
 
 # # Exact solution for Poisson 2D
-# def Sol_exact(x = TPZManVecDouble(), sol = TPZManVecDouble(), dsol = TPZFMatrix() ):
-
-# 	dsol.Resize(3,3)
-# 	sol.Resize(3)
-# 	dsol.Zero()
-	
-# 	xv = x[0]
-# 	yv = x[1]
-# 	zv = x[2]
-	
-# 	Pi = math.pi
-	
-# 	v_x =  math.cos(2*Pi*yv)*math.sin(2*Pi*xv)
-# 	v_y =  -(math.cos(2*Pi*xv)*math.sin(2*Pi*yv))
-	
-# 	sol[0]=v_x
-# 	sol[1]=v_y
-	
-# 	# vx direction
-# 	dsol.SetItem(0,0,2*Pi*math.cos(2*Pi*xv)*math.cos(2*Pi*yv))
-# 	dsol.SetItem(0,1,2*Pi*math.sin(2*Pi*xv)*math.sin(2*Pi*yv))
-	
-	
-# 	# vy direction
-# 	dsol.SetItem(1,0,-2*Pi*math.sin(2*Pi*xv)*math.sin(2*Pi*yv))
-# 	dsol.SetItem(1,1,-2*Pi*math.cos(2*Pi*xv)*math.cos(2*Pi*yv))
 
 
 

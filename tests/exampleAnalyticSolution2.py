@@ -1,9 +1,38 @@
 from neopz import*
+
+def Sol_exact(x = TPZManVecDouble(), sol = TPZManVecDouble(), dsol = TPZFMatrix() ):
+    
+    dsol.Resize(3,3)
+    sol.Resize(3)
+    dsol.Zero()
+    
+    xv = x[0]
+    yv = x[1]
+    zv = x[2]
+        
+    Pi = math.pi
+            
+    v_x =  math.cos(2*Pi*yv)*math.sin(2*Pi*xv)
+    v_y =  -(math.cos(2*Pi*xv)*math.sin(2*Pi*yv))
+            
+    sol[0]=v_x
+    sol[1]=v_y
+            
+            # vx direction
+    dsol.SetItem(0,0,2*Pi*math.cos(2*Pi*xv)*math.cos(2*Pi*yv))
+    dsol.SetItem(0,1,2*Pi*math.sin(2*Pi*xv)*math.sin(2*Pi*yv))
+            
+            
+            # vy direction
+    dsol.SetItem(1,0,-2*Pi*math.sin(2*Pi*xv)*math.sin(2*Pi*yv))
+
+
 gmesh = TPZGeoMesh()
 read = TPZGmshReader()
 gmesh = read.GeometricGmshMesh4("tests/geometric-mesh/simple_2D.msh", gmesh)
 gmesh.BuildConnectivity()
 mat = TPZMatLaplacian(1,2)
+mat.SetForcingFunctionExact(Sol_exact)
 cmesh = TPZCompMesh(gmesh)
 val = cmesh.InsertMaterialObject(mat)
 
@@ -39,10 +68,10 @@ an.Solve()
 an.SetExact2()
 
 name = str("resultado.vtk")
-scalnames = TPZVecString(2)
+scalnames = TPZVecString(1)
 vecnames = TPZVecString(1)
-scalnames[0]="state"
-scalnames[1]="ExactSolution"
+#scalnames[0]="state"
+scalnames[0]="ExactSolution"
 vecnames[0]="Flux"
 
 an.DefineGraphMesh(2,scalnames,vecnames, name)
@@ -51,6 +80,7 @@ an.PostProcess(0,2)
 
 
 
+dsol.SetItem(1,1,-2*Pi*math.cos(2*Pi*xv)*math.cos(2*Pi*yv))
 
 
 
