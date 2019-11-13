@@ -4,8 +4,8 @@ SetFactory("OpenCASCADE");
 h=2.0;
 
 Point(1) = {0.0, 0.0, 0.0, h};
-Point(2) = {100.0, 0.0, 0.0, h};
-Point(3) = {100.0, 10.0, 0.0, h};
+Point(2) = {10.0, 0.0, 0.0, h};
+Point(3) = {10.0, 10.0, 0.0, h};
 Point(4) = {0.0, 10.0, 0.0, h};
 Line(1) = {2, 3};
 Line(2) = {3, 4};
@@ -27,6 +27,7 @@ Physical Curve("bc_outlet") = {3};
 
 //Coherence;
 
-Transfinite Line {1,3} = 2 Using Bump 1;
+// Transfinite Line {1,3} = 2 Using Bump 1;
+Transfinite Line "*" = 2;
 Transfinite Surface "*";
 Recombine Surface "*";

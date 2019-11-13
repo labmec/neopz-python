@@ -3,6 +3,11 @@
 #include <pybind11/iostream.h>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
+#include <pybind11/functional.h>
+
+// cpp STL
+#include <map>                    // for map
+#include <set>                    // for set
 
 namespace py = pybind11;
 using namespace py::literals;
@@ -22,29 +27,54 @@ using namespace py::literals;
 #include "tpzprism.h"
 #include "tpzcube.h"
 
-// Geometric mesh
-#include "TPZGmshReader.h"
+// Mesh
 #include "pzgmesh.h"
+#include "TPZGmshReader.h"
 #include "TPZVTKGeoMesh.h"
 #include "pzgeoelbc.h"
 #include "pzgeoelside.h"
 
-//
-#include "TPZSSpStructMatrix.h"
 #include "pzcmesh.h"
 
-//
+// Matrix
+#include "pzmatrix.h"
+
+//StrMatrix
+#include "pzstrmatrix.h"
+#include "pzfstrmatrix.h"
+#include "TPZSSpStructMatrix.h"
+#include "TPZFrontStructMatrix.h"
+#include "TPZParFrontStructMatrix.h"
+#include "TPZStructMatrixBase.h"
+#include "pzskylstrmatrix.h"
+#include "TPZSkylineNSymStructMatrix.h"
+
+// Material
 #include "TPZMaterial.h"
 #include "pzpoisson3d.h"
 #include "TPZMatElasticity2D.h"
 #include "pzelast3d.h"
 #include "pzbndcond.h"
-#include <map>                    // for map
-#include <set>                    // for set
 #include "pzanalysis.h"
 #include "pzstepsolver.h"
-#include "pzstrmatrix.h"
-#include "pzmatrix.h"
+#include "pzpostprocanalysis.h"
+#include "TPZMatLaplacian.h"
+
+#include "pzsolve.h"
+#include "tpzautopointer.h"
+
+// Elastoplasticity 
+#include "TPZBndCondWithMem.h" 
+#include "TPZBndCondWithMem_impl.h"
+#include "TPZMatElastoPlastic2D.h"
+#include "TPZPlasticStepPV.h"
+#include "TPZYCMohrCoulombPV.h"
+#include "TPZElasticResponse.h"
+#include "TPZElastoPlasticMem.h"
+#include "TPZPlasticCriterion.h"
+#include "TPZTensor.h"
+#include "TPZPlasticState.h"
+#include "TPZBndCondWithMem.h"
 
 // For SBFEM simulations
 #include "TPZSBFemVolume.h"
@@ -131,7 +161,7 @@ PYBIND11_MODULE(neopz, m) {
     ;
 
     // TPZVec<int64_t> bindings
-    py::class_<TPZVec <int64_t>>(m, "TPZVecInt")
+    py::class_<TPZVec <int>>(m, "TPZVecInt")
         .def(py::init())
         .def(py::init<int64_t>())
         .def(py::init<int64_t, int64_t>())
@@ -166,7 +196,7 @@ PYBIND11_MODULE(neopz, m) {
     ;
 
     // TPZManVector<int> bindings
-    py::class_<TPZManVector<int64_t>, TPZVec<int64_t>>(m, "TPZManVecInt")
+    py::class_<TPZManVector<int>, TPZVec<int>>(m, "TPZManVecInt")
         .def(py::init())
         .def(py::init<int64_t>())
         .def(py::init<int64_t, int64_t>())
@@ -235,8 +265,10 @@ PYBIND11_MODULE(neopz, m) {
                  }
                  r += "]";
                  return r;
-             }
-        )    ;
+             })
+        .def("Resize", & TPZFMatrix<double>::Resize)
+        .def("Zero", &TPZFMatrix<double>::Zero)
+    ;
     
     // TPZStack<int> bindings
     py::class_<TPZStack<int>>(m, "TPZStackInt")
@@ -537,6 +569,7 @@ PYBIND11_MODULE(neopz, m) {
     py::class_<TPZMaterial, std::unique_ptr<TPZMaterial, py::nodelete>>(m, "TPZMaterial")
         .def("CreateBC", &TPZMaterial::CreateBC)
         .def("SetId", &TPZMaterial::SetId)
+        .def("Id", &TPZMaterial::Id)
     ;
 
     py::class_<TPZBndCond, TPZMaterial , std::unique_ptr<TPZBndCond, py::nodelete>>(m, "TPZBndCond")
@@ -545,6 +578,10 @@ PYBIND11_MODULE(neopz, m) {
         .def(py::init< TPZMaterial * ,int ,int  , TPZFMatrix<STATE> & ,TPZFMatrix<STATE> & >())
     ;
     
+    py::class_<TPZMatLaplacian, TPZMaterial, std::unique_ptr<TPZMatLaplacian, py::nodelete>>(m, "TPZMatLaplacian")
+        .def(py::init<int,int>())
+    ;
+
     py::class_<TPZMatPoisson3d, TPZMaterial, std::unique_ptr<TPZMatPoisson3d, py::nodelete>>(m, "TPZMatPoisson3d")
         .def(py::init<int, int>())
     ;
@@ -601,6 +638,11 @@ PYBIND11_MODULE(neopz, m) {
     py::class_<TPZStructMatrix >(m, "TPZStructMatrix")
     ;
 
+    py::class_<TPZFStructMatrix,TPZStructMatrix >(m, "TPZFStructMatrix")
+
+        .def(py::init<TPZCompMesh *>())
+    ;
+
     py::class_<TPZSymetricSpStructMatrix, TPZStructMatrix >(m, "TPZSymetricSpStructMatrix")
         .def(py::init<TPZCompMesh *>())
         .def("Create", [](TPZSymetricSpStructMatrix & spmatrix) {
@@ -639,11 +681,56 @@ PYBIND11_MODULE(neopz, m) {
         .def("SetSolver", &TPZAnalysis::SetSolver)
         .def("Assemble", &TPZAnalysis::Assemble)
         .def("Solve", &TPZAnalysis::Solve)
+        .def("Solution", &TPZAnalysis::Solution)
         .def("DefineGraphMesh", py::overload_cast<int,const TPZVec<std::string> &,const TPZVec<std::string>&, const std::string &  >(&TPZAnalysis::DefineGraphMesh))
+        .def("DefineGraphMesh", py::overload_cast<int,const TPZVec<std::string> &,const TPZVec<std::string>&, const TPZVec<std::string>&, const std::string &  >(&TPZAnalysis::DefineGraphMesh))
         .def("PostProcess", py::overload_cast<int, int>(&TPZAnalysis::PostProcess))
         .def("NormRhs", &TPZAnalysis::NormRhs)
+        .def("Mesh", &TPZAnalysis::Mesh)
         .def("SetExact", &TPZAnalysis::SetExact)
-        .def("SetForcingFunction", &TPZAnalysis::SetForcingFunction)
+        .def("SetExact2", [](TPZAnalysis &self){
+            std::function<void(const TPZVec<REAL> &loc, TPZVec<STATE> &result, TPZFMatrix<STATE> &deriv)>
+                Sol_exact = [](const TPZVec<REAL> &x, TPZVec<STATE> &sol, TPZFMatrix<STATE> &dsol){
+                    dsol.Resize(3,3);
+                    sol.resize(3);
+                    dsol.Zero();
+                    
+                    REAL xv = x[0];
+                    REAL yv = x[1];
+                //  REAL zv = x[2];
+                    
+                    REAL v_x =  cos(2*M_PI*yv)*sin(2*M_PI*xv);
+                    REAL v_y =  -(cos(2*M_PI*xv)*sin(2*M_PI*yv));
+                    
+                    sol[0]=v_x;
+                    sol[1]=v_y;
+                    
+                    // vx direction
+                    dsol(0,0)= 2*M_PI*cos(2*M_PI*xv)*cos(2*M_PI*yv);
+                    dsol(0,1)= 2*M_PI*sin(2*M_PI*xv)*sin(2*M_PI*yv);
+
+                    
+                    // vy direction
+                    dsol(1,0)= -2*M_PI*sin(2*M_PI*xv)*sin(2*M_PI*yv);
+                    dsol(1,1)= -2*M_PI*cos(2*M_PI*xv)*cos(2*M_PI*yv);
+                    
+                };
+
+                self.SetExact(Sol_exact);
+                self.Mesh()->ElementSolution().Redim(self.Mesh()->NElements(),9);
+            return 0;
+        })
+        // .def("SetForcingFunction", &TPZAnalysis::SetForcingFunction)
+    ;
+
+    py::class_<TPZPostProcAnalysis, TPZAnalysis> (m,"TPZPostProcAnalysis")
+        .def(py::init())
+        .def("SetCompMesh", &TPZPostProcAnalysis::SetCompMesh)
+        .def("SetPostProcessVariables", &TPZPostProcAnalysis::SetPostProcessVariables)
+        .def("SetStructuralMatrix",py::overload_cast<TPZStructMatrix &>(&TPZAnalysis::SetStructuralMatrix))
+        .def("TransferSolution", &TPZPostProcAnalysis::TransferSolution)
+        // .def("DefineGraphMesh", py::overload_cast<int,const TPZVec<std::string> &,const TPZVec<std::string>&, const TPZVec<std::string>&, const std::string &  >(&TPZPostProcAnalysis::DefineGraphMesh))
+        // .def("PostProcess", py::overload_cast<int, int>(&TPZPostProcAnalysis::PostProcess))
     ;
 
     py::class_<TPZSBFemVolume, std::unique_ptr<TPZSBFemVolume, py::nodelete> >(m, "TPZSBFemVolume")

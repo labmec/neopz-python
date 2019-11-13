@@ -3,7 +3,7 @@ gmesh = TPZGeoMesh()
 read = TPZGmshReader()
 gmesh = read.GeometricGmshMesh4("tests/geometric-mesh/simple_2D.msh", gmesh)
 gmesh.BuildConnectivity()
-mat = TPZMatPoisson3d(1,2)
+mat = TPZMatLaplacian(1,2)
 cmesh = TPZCompMesh(gmesh)
 val = cmesh.InsertMaterialObject(mat)
 
@@ -36,16 +36,18 @@ stepsol.SetDirect(ECholesky)
 an.SetSolver(stepsol)
 an.Assemble()
 an.Solve()
+an.SetExact2()
 
 name = str("resultado.vtk")
-scalnames = TPZVecString(1)
+scalnames = TPZVecString(2)
 vecnames = TPZVecString(1)
 scalnames[0]="state"
+scalnames[1]="ExactSolution"
 vecnames[0]="Flux"
 
 an.DefineGraphMesh(2,scalnames,vecnames, name)
 an.PostProcess(0,2)
-print("\nIt's on a destructor!!!!\n\n")
+
 
 
 
