@@ -190,7 +190,7 @@ while count < nfilas :
 
 mass_matrix_Q = 0
 dt = 10.0
-n_steps = 25
+n_steps = 15
 mattrans.SetTimeStep(dt)
 mattrans.SetMassMatrixAssembly(mass_matrix_Q)
 an_transp.Assemble()

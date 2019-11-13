@@ -25,6 +25,9 @@ using namespace py::literals;
 
 #include "TPZGeoLinear.h"
 #include "pzgeoquad.h"
+#include "TPZGeoCube.h"
+#include "pzgeoprism.h"
+#include "pzgeotriangle.h"
 #include "TPZSpStructMatrix.h"
 
 // Geometric mesh
@@ -687,6 +690,7 @@ PYBIND11_MODULE(neopz, m) {
     py::class_<TPZCompEl, std::unique_ptr<TPZCompEl, py::nodelete>  >(m, "TPZCompEl")
         .def("Print", [](TPZCompEl &TPZCompEl){ return TPZCompEl.Print();})
     
+    
     ;
 
     py::class_<TPZInterpolationSpace, TPZCompEl, std::unique_ptr<TPZInterpolationSpace, py::nodelete>  >(m, "TPZInterpolationSpace")
@@ -841,6 +845,18 @@ PYBIND11_MODULE(neopz, m) {
     //           .def(py::init<>())
     .def("CreateInterfaces", &TPZMultiphysicsElement::CreateInterfaces)
     ;
+    py::class_<TPZMultiphysicsCompEl<pzgeom::TPZGeoCube>, TPZMultiphysicsElement, std::unique_ptr<TPZMultiphysicsCompEl<pzgeom::TPZGeoCube>, py::nodelete>>(m, "TPZMultiphysicsCompElCube")
+    //           .def(py::init<>())
+    .def("CreateInterfaces", &TPZMultiphysicsElement::CreateInterfaces)
+    ;
+    py::class_<TPZMultiphysicsCompEl<pzgeom::TPZGeoPrism>, TPZMultiphysicsElement, std::unique_ptr<TPZMultiphysicsCompEl<pzgeom::TPZGeoPrism>, py::nodelete>>(m, "TPZMultiphysicsCompElPrism")
+    //           .def(py::init<>())
+    .def("CreateInterfaces", &TPZMultiphysicsElement::CreateInterfaces)
+    ;
+    py::class_<TPZMultiphysicsCompEl<pzgeom::TPZGeoTriangle>, TPZMultiphysicsElement, std::unique_ptr<TPZMultiphysicsCompEl<pzgeom::TPZGeoTriangle>, py::nodelete>>(m, "TPZMultiphysicsCompElTriangle")
+    //           .def(py::init<>())
+    .def("CreateInterfaces", &TPZMultiphysicsElement::CreateInterfaces)
+    ;
 
     
     py::class_<TPZMultiphysicsCompMesh, TPZCompMesh, std::unique_ptr<TPZMultiphysicsCompMesh, py::nodelete>>(m, "TPZMultiphysicsCompMesh")
@@ -888,6 +904,8 @@ PYBIND11_MODULE(neopz, m) {
         .value("ECholesky", DecomposeType::ECholesky)
         .value("ELDLt", DecomposeType::ELDLt)
         .value("ELU", DecomposeType::ELU)
+        .value("ENoDecompose", DecomposeType::ENoDecompose)
+        .value("ELUPivot", DecomposeType::ELUPivot)
         .export_values()
     ;
 
