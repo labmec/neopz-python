@@ -880,7 +880,7 @@ PYBIND11_MODULE(neopz, m) {
         .def("SetDirect", &TPZStepSolver<STATE>::SetDirect)
     ;
 
-    py::class_<TPZPostProcAnalysis, TPZAnalysis> (m,"TPZPostProcAnalysis")
+    py::class_<TPZPostProcAnalysis, TPZAnalysis, std::unique_ptr<TPZPostProcAnalysis, py::nodelete> >(m, "TPZPostProcAnalysis")
         .def(py::init())
         .def("SetCompMesh", &TPZPostProcAnalysis::SetCompMesh)
         .def("SetPostProcessVariables", &TPZPostProcAnalysis::SetPostProcessVariables)
