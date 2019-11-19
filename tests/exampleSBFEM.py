@@ -11,7 +11,7 @@ def AddBoundaryElementsCook(gmesh):
 	nelem = gmesh.NElements();
 	for inodes in range(nnodes):
 		nodevec = gmesh.NodeVec()
-		xco = TPZVec_double(3)
+		xco = TPZVecDouble(3)
 		nodevec[inodes].GetCoordinates(xco)
 		if (np.absolute(xco[0]) < 1e-3):
 			leftset = np.append(leftset,[inodes])
@@ -85,9 +85,9 @@ for porder in range(minporder,maxporder,1):
 	for irefskeleton in range(minrefskeleton,maxrefskeleton,1):
 		# Reading a UNSW file and creating the geometry
 		sbfemvolume = TPZSBFemVolume()
-		elpartitions = TPZManVector_int64_t()
-		scalingcenterindices = TPZVec_int64_t()
-		gmesh = sbfemvolume.ReadUNSWSBGeoFile("tests/geometric-mesh/CooksMembrane_sbfemesh_16_1_1.txt",elpartitions,scalingcenterindices)
+		elpartitions = TPZManVecInt()
+		scalingcenterindices = TPZVecInt()
+		gmesh = sbfemvolume.ReadUNSWSBGeoFile("CooksMembrane_sbfemesh_16_1_1.txt",elpartitions,scalingcenterindices)
 		print("# Geometric Mesh ready!")
 		# Creating the boundary conditions
 		print("Creating Boundary Conditions")
@@ -133,8 +133,8 @@ for porder in range(minporder,maxporder,1):
 		print("# Solve is done! PostProcessing result...")
 		# Post processing solution
 		name = str("resultado.vtk")
-		scalnames = TPZVec_string(3)
-		vecnames = TPZVec_string(1)
+		scalnames = TPZVecString(3)
+		vecnames = TPZVecString(1)
 		vecnames[0]="State"
 		scalnames[0]="StressX"
 		scalnames[1]="StressY"

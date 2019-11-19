@@ -1,7 +1,7 @@
 from neopz import*
 gmesh = TPZGeoMesh()
 read = TPZGmshReader()
-gmesh = read.GeometricGmshMesh4("tests/geometric-mesh/simple_2D_coarse.msh", gmesh)
+gmesh = read.GeometricGmshMesh4("geometric-mesh/simple_2D_coarse.msh", gmesh)
 gmesh.BuildConnectivity()
 mat = TPZMatPoisson3d(1,2)
 cmesh = TPZCompMesh(gmesh)
@@ -38,8 +38,8 @@ an.Assemble()
 an.Solve()
 
 name = str("resultado.vtk")
-scalnames = TPZVec_string(1)
-vecnames = TPZVec_string(1)
+scalnames = TPZVecString(1)
+vecnames = TPZVecString(1)
 scalnames[0]="state"
 vecnames[0]="Flux"
 
