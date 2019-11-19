@@ -140,19 +140,19 @@ for it in range(nit):
 # Functions to do post process
 post = TPZPostProcAnalysis()
 post.SetCompMesh(cmesh,True)
-post_mat_id = TPZVecInt(1,mat.Id())
+post_mat_id = TPZVec_int(1,mat.Id())
 
 name = str("elastoplasticWellbore.vtk")
-scalnames = TPZVecString(1)
-vecnames = TPZVecString(1)
-tensnames = TPZVecString(3)
+scalnames = TPZVec_string(1)
+vecnames = TPZVec_string(1)
+tensnames = TPZVec_string(3)
 scalnames[0]="FailureType"
 vecnames[0] ="Displacement"
 tensnames[0]="Stress"
 tensnames[1]="Strain"
 tensnames[2]="StrainPlastic"
 
-names = TPZVecString(5)
+names = TPZVec_string(5)
 names[0] = scalnames[0]
 names[1] = vecnames[0]
 names[2] = tensnames[0]
