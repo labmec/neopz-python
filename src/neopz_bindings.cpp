@@ -48,6 +48,35 @@ PYBIND11_MODULE(neopz, m) {
         -------------------------
     )pbdoc";
 
+    // TPZManVector<int> bindings
+    py::class_<TPZManVector<int>>(m, "TPZVecInt")
+            .def(py::init())
+            .def(py::init<int64_t>())
+            .def(py::init<int64_t, int>())
+            .def("Resize", [](TPZManVector<int>& vec, const int64_t& newsize) { return vec.Resize(newsize); })
+            .def("Size", [](const TPZManVector<int>& vec) { return vec.size(); })
+            .def("__getitem__",
+                 [](const TPZManVector<int>& vec, int64_t position) {
+                     if (position >= vec.size() || position < 0) throw py::index_error();
+                     return vec[position];
+                 },
+                 py::is_operator()
+            )
+            .def("__setitem__",
+                 [](TPZManVector<int>& vec, int64_t position, int value) {
+                     if (position >= vec.size() || position < 0) throw py::index_error();
+                     vec[position] = value;
+                 },
+                 py::is_operator()
+            )
+            .def("__repr__",
+                 [](TPZManVector<int>& vec) {
+                     std::ostringstream stream;
+                     vec.Print(stream);
+                     return stream.str();
+                 }
+            );
+
     // TPZManVector<double> bindings
     py::class_<TPZManVector<double>>(m, "TPZVecDouble")
             .def(py::init())
