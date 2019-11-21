@@ -1,5 +1,8 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/operators.h>
+#include <pybind11/iostream.h>
+#include <pybind11/stl.h>
+#include <pybind11/stl_bind.h>
 
 namespace py = pybind11;
 using namespace py::literals;
@@ -40,6 +43,10 @@ using namespace py::literals;
 #include "pzanalysis.h"
 #include "pzstepsolver.h"
 #include "pzstrmatrix.h"
+
+// Python binding utilities
+#include "TPZTypedPythonIterator.h"
+
 
 PYBIND11_MODULE(neopz, m) {
     m.doc() = R"pbdoc(

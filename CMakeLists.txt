@@ -25,7 +25,7 @@ find_package(pybind11)
 
 # Project related sources
 set(SOURCE_DIR "src")
-pybind11_add_module(neopz ${SOURCES} "${SOURCE_DIR}/neopz_bindings.cpp")
+pybind11_add_module(neopz "${SOURCE_DIR}/neopz_bindings.cpp" "${SOURCE_DIR}/TPZTypedPythonIterator.h")
 
 IF(${PZ_USING_MKL})
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-narrowing -Wl,--no-as-needed")
