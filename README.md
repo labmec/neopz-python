@@ -1,4 +1,7 @@
-<img src="https://github.com/labmec/neopz-python/blob/master/graphics/pzpy_logo.svg" data-canonical-src="https://github.com/labmec/neopz-python/blob/master/graphics/pzpy_logo.svg" width="210" height="297" />
+<p align="center"> 
+    <img src="https://github.com/labmec/neopz-python/blob/master/graphics/pzpy_logo.svg" data-canonical-src="https://github.com/labmec/neopz-python/blob/master/graphics/pzpy_logo.svg" width="210" height="297" />
+
+</p>
 
 This project implements Python bindings for [NeoPZ](https://github.com/labmec/neopz) finite element library using [pybind11](https://github.com/pybind/pybind11).
 Make sure you have both libraries (and CMake!) installed in your environment.
