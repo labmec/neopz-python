@@ -42,7 +42,7 @@ Download the latest source tree of neopz-python:
 ```
 $ git clone https://github.com/labmec/neopz-python
 ```
-Enter in neopz-python directory and generate de module:
+Enter in neopz-python directory and generate the module:
 ```
 $ cd neopz-python
 $ python3 setup.py develop
