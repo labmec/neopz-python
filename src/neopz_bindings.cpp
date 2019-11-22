@@ -13,9 +13,9 @@ using namespace py::literals;
 
 // NeoPZ linear algebra and container classes
 #include "pzmatrix.h"
+#include "pzstack.h"
 #include "pzmanvector.h"
 #include "pzfmatrix.h"
-#include "tpzcube.h"
 #include "pztrnsform.h"
 
 // NeoPZ topology classes
@@ -26,6 +26,7 @@ using namespace py::literals;
 #include "tpztetrahedron.h"
 #include "tpzpyramid.h"
 #include "tpzprism.h"
+#include "tpzcube.h"
 
 // Geometric mesh
 #include "TPZGmshReader.h"
@@ -45,8 +46,8 @@ using namespace py::literals;
 #include "pzstrmatrix.h"
 
 // Python binding utilities
-#include "TPZTypedPythonIterator.h"
-
+#include "TypedPythonIterator.h"
+#include "TemplatedContainersBindings.h"
 
 PYBIND11_MODULE(neopz, m) {
     m.doc() = R"pbdoc(
@@ -55,103 +56,24 @@ PYBIND11_MODULE(neopz, m) {
         -------------------------
     )pbdoc";
 
-    // TPZManVector<int> bindings
-    py::class_<TPZManVector<int>>(m, "TPZVecInt")
-            .def(py::init())
-            .def(py::init<int64_t>())
-            .def(py::init<int64_t, int>())
-            .def("Resize", [](TPZManVector<int>& vec, const int64_t& newsize) { return vec.Resize(newsize); })
-            .def("Size", [](const TPZManVector<int>& vec) { return vec.size(); })
-            .def("__getitem__",
-                 [](const TPZManVector<int>& vec, int64_t position) {
-                     if (position >= vec.size() || position < 0) throw py::index_error();
-                     return vec[position];
-                 },
-                 py::is_operator()
-            )
-            .def("__setitem__",
-                 [](TPZManVector<int>& vec, int64_t position, int value) {
-                     if (position >= vec.size() || position < 0) throw py::index_error();
-                     vec[position] = value;
-                 },
-                 py::is_operator()
-            )
-            .def("__repr__",
-                 [](TPZManVector<int>& vec) {
-                     std::ostringstream stream;
-                     vec.Print(stream);
-                     return stream.str();
-                 }
-            );
+    // TPZVec<T> bindings
+    declareTPZVec<int>(m, "Int");
+    declareTPZVec<REAL>(m, "Real");
+    declareTPZVec<std::string>(m, "String");
 
-    // TPZManVector<double> bindings
-    py::class_<TPZManVector<double>>(m, "TPZVecDouble")
-            .def(py::init())
-            .def(py::init<int64_t>())
-            .def(py::init<int64_t, double>())
-            .def("Resize", [](TPZManVector<double>& vec, const int64_t& newsize) { return vec.Resize(newsize); })
-            .def("Size", [](const TPZManVector<double>& vec) { return vec.size(); })
-            .def("__getitem__",
-                 [](const TPZManVector<double>& vec, int64_t position) {
-                     if (position >= vec.size() || position < 0) throw py::index_error();
-                     return vec[position];
-                 },
-                 py::is_operator()
-            )
-            .def("__setitem__",
-                 [](TPZManVector<double>& vec, int64_t position, double value) {
-                     if (position >= vec.size() || position < 0) throw py::index_error();
-                     vec[position] = value;
-                 },
-                 py::is_operator()
-            )
-            .def("__repr__",
-                 [](TPZManVector<double>& vec) {
-                     std::ostringstream stream;
-                     vec.Print(stream);
-                     return stream.str();
-                 }
-            );
+    // TPZManVector<T> bindings
+    declareTPZManVector<int>(m, "Int");
+    declareTPZManVector<REAL>(m, "Real");
+    declareTPZManVector<std::string>(m, "String");
 
-    // TPZFMatrix<double> bindings
-    py::class_<TPZFMatrix<double>>(m, "TPZFMatrix")
-            .def(py::init())
-            .def(py::init<int64_t, int64_t>())
-            .def(py::init<int64_t, int64_t, double>())
-            .def("GetVal", [](TPZFMatrix<double>& matrix, const int64_t& row, const int64_t& col) {
-                if (row >= matrix.Rows() || row < 0) throw py::index_error();
-                if (col >= matrix.Cols() || col < 0) throw py::index_error();
-                return matrix.GetVal(row, col);
-            })
-            .def("__repr__",
-                 [](TPZFMatrix<double>& matrix) {
-                     std::ostringstream stream;
-                     matrix.Print(stream);
-                     return stream.str();
-                 }
-            );
+    // TPZStack<T> bindings
+    declareTPZStack<int>(m, "Int");
+    declareTPZStack<REAL>(m, "Real");
+    declareTPZStack<std::string>(m, "String");
 
-    // TPZStack<int> bindings
-    py::class_<TPZStack<int>>(m, "TPZStackInt")
-            .def(py::init())
-            .def(py::init<int, int>())
-            .def("Push", [](TPZStack<int>& stack, const int object) {
-                stack.Push(object);
-            })
-            .def("Pop", [](TPZStack<int>& stack) {
-                return stack.Pop();
-            })
-            .def("Peek", [](TPZStack<int>& stack) {
-                     return stack.Peek();
-                 }
-            )
-            .def("__repr__",
-                 [](TPZStack<int>& stack) {
-                     std::ostringstream stream;
-                     stack.Print(stream);
-                     return stream.str();
-                 }
-            );
+    // TPZFMatrix<T> bindings
+    declareTPZFMatrix<int>(m, "Int");
+    declareTPZFMatrix<REAL>(m, "Real");
 
     // TPZTransform bindings
     py::class_<TPZTransform<double>>(m, "TPZTransform")
@@ -172,7 +94,6 @@ PYBIND11_MODULE(neopz, m) {
                      return stream.str();
                  }
             );
-
 
     // TPZPoint bindings
     py::class_<pztopology::TPZPoint>(m, "TPZPoint")
@@ -412,27 +333,6 @@ PYBIND11_MODULE(neopz, m) {
                  [](TPZSymetricSpStructMatrix& spmatrix, TPZStack<int64_t>& elgraph, TPZVec<int64_t>& elgraphindex) {
                      return spmatrix.SetupMatrixData(elgraph, elgraphindex);
                  });
-
-    // TPZVec<std::string>
-    py::class_<TPZVec<std::string> >(m, "TPZVecString")
-            .def(py::init())
-            .def(py::init<int64_t>())
-            .def(py::init<int64_t, std::string>())
-
-            .def("__getitem__",
-                 [](const TPZVec<std::string>& vec, int64_t position) {
-                     if (position >= vec.size() || position < 0) throw py::index_error();
-                     return vec[position];
-                 },
-                 py::is_operator()
-            )
-            .def("__setitem__",
-                 [](TPZVec<std::string>& vec, int64_t position, std::string value) {
-                     if (position >= vec.size() || position < 0) throw py::index_error();
-                     vec[position] = value;
-                 },
-                 py::is_operator()
-            );
 
     // TPZAnalysis
     py::class_<TPZAnalysis>(m, "TPZAnalysis")

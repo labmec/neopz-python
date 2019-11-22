@@ -12,8 +12,8 @@ print("Testando print de containers")
 stack = TPZStackInt(3, 4)
 print(stack)
 
-matrix = TPZFMatrix(3, 1, 1.)
+matrix = TPZFMatrixReal(3, 1, 1.)
 print(matrix)
 
-vec = TPZVecDouble(3, 1.)
+vec = TPZVecReal(3, 1.)
 print(vec)

@@ -8,12 +8,11 @@
 namespace py = pybind11;
 using namespace py::literals;
 
-#ifndef TPZTYPEDPYTHONITERATOR_H
-#define TPZTYPEDPYTHONITERATOR_H
+#ifndef TYPEDPYTHONITERATOR_H
+#define TYPEDPYTHONITERATOR_H
 
 template <typename T>
-class TPZTypedPythonIterator
-{
+class TypedPythonIterator {
 public:
     using iterator_category = std::input_iterator_tag;
     using difference_type = std::ptrdiff_t;
@@ -21,11 +20,11 @@ public:
     using pointer = T*;
     using reference = T&;
 
-    explicit TPZTypedPythonIterator(py::iterator& py_iter) :
+    explicit TypedPythonIterator(py::iterator& py_iter) :
             py_iter_(py_iter)
     {}
 
-    explicit TPZTypedPythonIterator(py::iterator&& py_iter) :
+    explicit TypedPythonIterator(py::iterator&& py_iter) :
             py_iter_(py_iter)
     {}
 
@@ -33,22 +32,22 @@ public:
         return (*py_iter_).template cast<value_type>();
     }
 
-    TPZTypedPythonIterator operator++(int) {
+    TypedPythonIterator operator++(int) {
         auto copy = *this;
         ++py_iter_;
         return copy;
     }
 
-    TPZTypedPythonIterator& operator++() {
+    TypedPythonIterator& operator++() {
         ++py_iter_;
         return *this;
     }
 
-    bool operator!=(TPZTypedPythonIterator &rhs) {
+    bool operator!=(TypedPythonIterator &rhs) {
         return py_iter_ != rhs.py_iter_;
     }
 
-    bool operator==(TPZTypedPythonIterator &rhs) {
+    bool operator==(TypedPythonIterator &rhs) {
         return py_iter_ == rhs.py_iter_;
     }
 
@@ -56,4 +55,4 @@ private:
     py::iterator py_iter_;
 };
 
-#endif // TPZTYPEDPYTHONITERATOR_H
+#endif // TYPEDPYTHONITERATOR_H
