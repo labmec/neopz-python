@@ -1,5 +1,5 @@
 <p align="center"> 
-    <img src="https://github.com/labmec/neopz-python/blob/master/graphics/pzpy_logo.svg" data-canonical-src="https://github.com/labmec/neopz-python/blob/master/graphics/pzpy_logo.svg" width="210" height="297" />
+    <img src="https://github.com/labmec/neopz-python/blob/master/graphics/pzpy_logo.svg" data-canonical-src="https://github.com/labmec/neopz-python/blob/master/graphics/pzpy_logo.svg" width="297" height="210" />
 
 </p>
 
