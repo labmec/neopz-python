@@ -48,6 +48,7 @@ using namespace py::literals;
 // Python binding utilities
 #include "TypedPythonIterator.h"
 #include "TemplatedContainersBindings.h"
+#include "TemplatedTopologyBindings.h"
 
 PYBIND11_MODULE(neopz, m) {
     m.doc() = R"pbdoc(
@@ -95,171 +96,15 @@ PYBIND11_MODULE(neopz, m) {
                  }
             );
 
-    // TPZPoint bindings
-    py::class_<pztopology::TPZPoint>(m, "TPZPoint")
-            .def(py::init())
-            .def_static("SideDimension", &pztopology::TPZPoint::SideDimension)
-            .def_static("LowerDimensionSides",
-                        py::overload_cast<int, TPZStack<int>&>(&pztopology::TPZPoint::LowerDimensionSides))
-            .def_static("LowerDimensionSides",
-                        py::overload_cast<int, TPZStack<int>&, int>(&pztopology::TPZPoint::LowerDimensionSides))
-            .def_static("HigherDimensionSides", &pztopology::TPZPoint::HigherDimensionSides)
-            .def_static("NSideNodes", &pztopology::TPZPoint::NSideNodes)
-            .def_static("SideNodeLocId", &pztopology::TPZPoint::SideNodeLocId)
-            .def_static("NumSides", py::overload_cast<>(&pztopology::TPZPoint::NumSides))
-            .def_static("CenterPoint", &pztopology::TPZPoint::CenterPoint)
-            .def_static("RefElVolume", [](pztopology::TPZPoint& topology) { return topology.RefElVolume(); })
-            .def_static("SideToSideTransform", &pztopology::TPZPoint::SideToSideTransform)
-            .def_static("TransformSideToElement", &pztopology::TPZPoint::TransformSideToElement)
-            .def_static("TransformElementToSide", &pztopology::TPZPoint::TransformElementToSide)
-            .def_static("IsInParametricDomain", &pztopology::TPZPoint::IsInParametricDomain)
-            .def_static("CreateSideIntegrationRule", &pztopology::TPZPoint::CreateSideIntegrationRule);
-
-    // TPZLine bindings
-    py::class_<pztopology::TPZLine>(m, "TPZLine")
-            .def(py::init())
-            .def_static("SideDimension", &pztopology::TPZLine::SideDimension)
-            .def_static("LowerDimensionSides",
-                        py::overload_cast<int, TPZStack<int>&>(&pztopology::TPZLine::LowerDimensionSides))
-            .def_static("LowerDimensionSides",
-                        py::overload_cast<int, TPZStack<int>&, int>(&pztopology::TPZLine::LowerDimensionSides))
-            .def_static("HigherDimensionSides", &pztopology::TPZLine::HigherDimensionSides)
-            .def_static("NSideNodes", &pztopology::TPZLine::NSideNodes)
-            .def_static("SideNodeLocId", &pztopology::TPZLine::SideNodeLocId)
-            .def_static("NumSides", py::overload_cast<>(&pztopology::TPZLine::NumSides))
-            .def_static("CenterPoint", &pztopology::TPZLine::CenterPoint)
-            .def_static("RefElVolume", [](pztopology::TPZLine& topology) { return topology.RefElVolume(); })
-            .def_static("SideToSideTransform", &pztopology::TPZLine::SideToSideTransform)
-            .def_static("TransformSideToElement", &pztopology::TPZLine::TransformSideToElement)
-            .def_static("TransformElementToSide", &pztopology::TPZLine::TransformElementToSide)
-            .def_static("IsInParametricDomain", &pztopology::TPZLine::IsInParametricDomain)
-            .def_static("CreateSideIntegrationRule", &pztopology::TPZLine::CreateSideIntegrationRule);
-
-    // TPZTriangle bindings
-    py::class_<pztopology::TPZTriangle>(m, "TPZTriangle")
-            .def(py::init())
-            .def_static("SideDimension", &pztopology::TPZTriangle::SideDimension)
-            .def_static("LowerDimensionSides",
-                        py::overload_cast<int, TPZStack<int>&>(&pztopology::TPZTriangle::LowerDimensionSides))
-            .def_static("LowerDimensionSides",
-                        py::overload_cast<int, TPZStack<int>&, int>(&pztopology::TPZTriangle::LowerDimensionSides))
-            .def_static("HigherDimensionSides", &pztopology::TPZTriangle::HigherDimensionSides)
-            .def_static("NSideNodes", &pztopology::TPZTriangle::NSideNodes)
-            .def_static("SideNodeLocId", &pztopology::TPZTriangle::SideNodeLocId)
-            .def_static("NumSides", py::overload_cast<>(&pztopology::TPZTriangle::NumSides))
-            .def_static("CenterPoint", &pztopology::TPZTriangle::CenterPoint)
-            .def_static("RefElVolume", [](pztopology::TPZTriangle& topology) { return topology.RefElVolume(); })
-            .def_static("SideToSideTransform", &pztopology::TPZTriangle::SideToSideTransform)
-            .def_static("TransformSideToElement", &pztopology::TPZTriangle::TransformSideToElement)
-            .def_static("TransformElementToSide", &pztopology::TPZTriangle::TransformElementToSide)
-            .def_static("IsInParametricDomain",
-                        (bool (*)(const TPZVec<REAL>&, REAL)) &pztopology::TPZTriangle::IsInParametricDomain)
-            .def_static("CreateSideIntegrationRule", &pztopology::TPZTriangle::CreateSideIntegrationRule);
-
-    // TPZQuadrilateral bindings
-    py::class_<pztopology::TPZQuadrilateral>(m, "TPZQuadrilateral")
-            .def(py::init())
-            .def_static("SideDimension", &pztopology::TPZQuadrilateral::SideDimension)
-            .def_static("LowerDimensionSides",
-                        py::overload_cast<int, TPZStack<int>&>(&pztopology::TPZQuadrilateral::LowerDimensionSides))
-            .def_static("LowerDimensionSides", py::overload_cast<int, TPZStack<int>&, int>(
-                    &pztopology::TPZQuadrilateral::LowerDimensionSides))
-            .def_static("HigherDimensionSides", &pztopology::TPZQuadrilateral::HigherDimensionSides)
-            .def_static("NSideNodes", &pztopology::TPZQuadrilateral::NSideNodes)
-            .def_static("SideNodeLocId", &pztopology::TPZQuadrilateral::SideNodeLocId)
-            .def_static("NumSides", py::overload_cast<>(&pztopology::TPZQuadrilateral::NumSides))
-            .def_static("CenterPoint", &pztopology::TPZQuadrilateral::CenterPoint)
-            .def_static("RefElVolume", [](pztopology::TPZQuadrilateral& topology) { return topology.RefElVolume(); })
-            .def_static("SideToSideTransform", &pztopology::TPZQuadrilateral::SideToSideTransform)
-            .def_static("TransformSideToElement", &pztopology::TPZQuadrilateral::TransformSideToElement)
-            .def_static("TransformElementToSide", &pztopology::TPZQuadrilateral::TransformElementToSide)
-            .def_static("IsInParametricDomain",
-                        (bool (*)(const TPZVec<REAL>&, REAL)) &pztopology::TPZQuadrilateral::IsInParametricDomain)
-            .def_static("CreateSideIntegrationRule", &pztopology::TPZQuadrilateral::CreateSideIntegrationRule);
-
-    // TPZTetrahedron bindings
-    py::class_<pztopology::TPZTetrahedron>(m, "TPZTetrahedron")
-            .def(py::init())
-            .def_static("SideDimension", &pztopology::TPZTetrahedron::SideDimension)
-            .def_static("LowerDimensionSides",
-                        py::overload_cast<int, TPZStack<int>&>(&pztopology::TPZTetrahedron::LowerDimensionSides))
-            .def_static("LowerDimensionSides",
-                        py::overload_cast<int, TPZStack<int>&, int>(&pztopology::TPZTetrahedron::LowerDimensionSides))
-            .def_static("HigherDimensionSides", &pztopology::TPZTetrahedron::HigherDimensionSides)
-            .def_static("NSideNodes", &pztopology::TPZTetrahedron::NSideNodes)
-            .def_static("SideNodeLocId", &pztopology::TPZTetrahedron::SideNodeLocId)
-            .def_static("NumSides", py::overload_cast<>(&pztopology::TPZTetrahedron::NumSides))
-            .def_static("CenterPoint", &pztopology::TPZTetrahedron::CenterPoint)
-            .def_static("RefElVolume", [](pztopology::TPZTetrahedron& topology) { return topology.RefElVolume(); })
-            .def_static("SideToSideTransform", &pztopology::TPZTetrahedron::SideToSideTransform)
-            .def_static("TransformSideToElement", &pztopology::TPZTetrahedron::TransformSideToElement)
-            .def_static("TransformElementToSide", &pztopology::TPZTetrahedron::TransformElementToSide)
-            .def_static("IsInParametricDomain",
-                        (bool (*)(const TPZVec<REAL>&, REAL)) &pztopology::TPZTetrahedron::IsInParametricDomain)
-            .def_static("CreateSideIntegrationRule", &pztopology::TPZTetrahedron::CreateSideIntegrationRule);
-
-    // TPZPyramid bindings
-    py::class_<pztopology::TPZPyramid>(m, "TPZPyramid")
-            .def(py::init())
-            .def_static("SideDimension", &pztopology::TPZPyramid::SideDimension)
-            .def_static("LowerDimensionSides",
-                        py::overload_cast<int, TPZStack<int>&>(&pztopology::TPZPyramid::LowerDimensionSides))
-            .def_static("LowerDimensionSides",
-                        py::overload_cast<int, TPZStack<int>&, int>(&pztopology::TPZPyramid::LowerDimensionSides))
-            .def_static("HigherDimensionSides", &pztopology::TPZPyramid::HigherDimensionSides)
-            .def_static("NSideNodes", &pztopology::TPZPyramid::NSideNodes)
-            .def_static("SideNodeLocId", &pztopology::TPZPyramid::SideNodeLocId)
-            .def_static("NumSides", py::overload_cast<>(&pztopology::TPZPyramid::NumSides))
-            .def_static("CenterPoint", &pztopology::TPZPyramid::CenterPoint)
-            .def_static("RefElVolume", [](pztopology::TPZPyramid& topology) { return topology.RefElVolume(); })
-            .def_static("SideToSideTransform", &pztopology::TPZPyramid::SideToSideTransform)
-            .def_static("TransformSideToElement", &pztopology::TPZPyramid::TransformSideToElement)
-            .def_static("TransformElementToSide", &pztopology::TPZPyramid::TransformElementToSide)
-            .def_static("IsInParametricDomain",
-                        (bool (*)(const TPZVec<REAL>&, REAL)) &pztopology::TPZPyramid::IsInParametricDomain)
-            .def_static("CreateSideIntegrationRule", &pztopology::TPZPyramid::CreateSideIntegrationRule);
-
-    // TPZPrism bindings
-    py::class_<pztopology::TPZPrism>(m, "TPZPrism")
-            .def(py::init())
-            .def_static("SideDimension", &pztopology::TPZPrism::SideDimension)
-            .def_static("LowerDimensionSides",
-                        py::overload_cast<int, TPZStack<int>&>(&pztopology::TPZPrism::LowerDimensionSides))
-            .def_static("LowerDimensionSides",
-                        py::overload_cast<int, TPZStack<int>&, int>(&pztopology::TPZPrism::LowerDimensionSides))
-            .def_static("HigherDimensionSides", &pztopology::TPZPrism::HigherDimensionSides)
-            .def_static("NSideNodes", &pztopology::TPZPrism::NSideNodes)
-            .def_static("SideNodeLocId", &pztopology::TPZPrism::SideNodeLocId)
-            .def_static("NumSides", py::overload_cast<>(&pztopology::TPZPrism::NumSides))
-            .def_static("CenterPoint", &pztopology::TPZPrism::CenterPoint)
-            .def_static("RefElVolume", [](pztopology::TPZPrism& topology) { return topology.RefElVolume(); })
-            .def_static("SideToSideTransform", &pztopology::TPZPrism::SideToSideTransform)
-            .def_static("TransformSideToElement", &pztopology::TPZPrism::TransformSideToElement)
-            .def_static("TransformElementToSide", &pztopology::TPZPrism::TransformElementToSide)
-            .def_static("IsInParametricDomain",
-                        (bool (*)(const TPZVec<REAL>&, REAL)) &pztopology::TPZPrism::IsInParametricDomain)
-            .def_static("CreateSideIntegrationRule", &pztopology::TPZPrism::CreateSideIntegrationRule);
-
-    // TPZCube bindings
-    py::class_<pztopology::TPZCube>(m, "TPZCube")
-            .def(py::init())
-            .def_static("SideDimension", &pztopology::TPZCube::SideDimension)
-            .def_static("LowerDimensionSides",
-                        py::overload_cast<int, TPZStack<int>&>(&pztopology::TPZCube::LowerDimensionSides))
-            .def_static("LowerDimensionSides",
-                        py::overload_cast<int, TPZStack<int>&, int>(&pztopology::TPZCube::LowerDimensionSides))
-            .def_static("HigherDimensionSides", &pztopology::TPZCube::HigherDimensionSides)
-            .def_static("NSideNodes", &pztopology::TPZCube::NSideNodes)
-            .def_static("SideNodeLocId", &pztopology::TPZCube::SideNodeLocId)
-            .def_static("NumSides", py::overload_cast<>(&pztopology::TPZCube::NumSides))
-            .def_static("CenterPoint", &pztopology::TPZCube::CenterPoint)
-            .def_static("RefElVolume", [](pztopology::TPZCube& topology) { return topology.RefElVolume(); })
-            .def_static("SideToSideTransform", &pztopology::TPZCube::SideToSideTransform)
-            .def_static("TransformSideToElement", &pztopology::TPZCube::TransformSideToElement)
-            .def_static("TransformElementToSide", &pztopology::TPZCube::TransformElementToSide)
-            .def_static("IsInParametricDomain",
-                        (bool (*)(const TPZVec<REAL>&, REAL)) &pztopology::TPZCube::IsInParametricDomain)
-            .def_static("CreateSideIntegrationRule", &pztopology::TPZCube::CreateSideIntegrationRule);
+    // Topology bindings
+    declareTopology<pztopology::TPZPoint>(m, "Point");
+    declareTopology<pztopology::TPZLine>(m, "Line");
+    declareTopology<pztopology::TPZTriangle>(m, "Triangle");
+    declareTopology<pztopology::TPZQuadrilateral>(m, "Quadrilateral");
+    declareTopology<pztopology::TPZTetrahedron>(m, "Tetrahedron");
+    declareTopology<pztopology::TPZPyramid>(m, "Pyramid");
+    declareTopology<pztopology::TPZPrism>(m, "Prism");
+    declareTopology<pztopology::TPZCube>(m, "Cube");
 
     // TPZGeoMesh bindings
     py::class_<TPZGeoMesh>(m, "TPZGeoMesh")

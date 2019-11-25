@@ -14,8 +14,9 @@ using namespace py::literals;
 #include "pzvec.h"
 #include "pzmanvector.h"
 #include "pzstack.h"
-#include "pzmatrix.h"
 #include "pzfmatrix.h"
+
+// Templated bindings for different NeoPZ container classes
 
 // TPZVec<T> bindings
 template<typename T>
