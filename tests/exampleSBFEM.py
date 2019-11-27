@@ -84,10 +84,11 @@ maxrefskeleton = 1
 for porder in range(minporder,maxporder,1):
 	for irefskeleton in range(minrefskeleton,maxrefskeleton,1):
 		# Reading a UNSW file and creating the geometry
-		sbfemvolume = TPZSBFemVolume()
 		elpartitions = TPZManVector_int64_t()
 		scalingcenterindices = TPZVec_int64_t()
-		gmesh = sbfemvolume.ReadUNSWSBGeoFile("tests/geometric-mesh/CooksMembrane_sbfemesh_16_1_1.txt",elpartitions,scalingcenterindices)
+		gmesh = TPZGeoMesh()
+		print("oi linda")
+		gmesh = gmesh.ReadUNSWSBGeoFile("tests/geometric-mesh/CooksMembrane_sbfemesh_16_1_1.txt",ESkeleton,elpartitions,scalingcenterindices)
 		print("# Geometric Mesh ready!")
 		# Creating the boundary conditions
 		print("Creating Boundary Conditions")
@@ -127,7 +128,6 @@ for porder in range(minporder,maxporder,1):
 		print("Entering Assemble...")
 		an.Assemble()
 		print("Assemble is done! Entering Solve...")
-		print("Rhs norm: ", an.NormRhs())
 		print("Number of equations: ", sbfem.NEquations())
 		an.Solve()
 		print("# Solve is done! PostProcessing result...")

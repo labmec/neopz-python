@@ -97,9 +97,9 @@ for it in range(nit):
 
 # New structure
 	an.SetStructMatrixDecomposed(False)
-	rn = an.Rhs()
-	rn *= 1.0
-	an.SetRhs(rn)
+	# rn = an.Rhs()
+	# rn *= 1.0
+	# an.SetRhs(rn)
 # New structure
 
 	# an.PrintRhs()
@@ -121,15 +121,15 @@ for it in range(nit):
 	# print(ddu)
 	# print(du)
 
-
-	norm_res = an.NormRhs()
+	rhs = an.Rhs()
+	norm_res = rhs.Norm()
 	stop_criterion = (norm_res < tol and norm_du < tol)
 	print("Nonlinear process: delta_u norm =  ", norm_du)
 	print("Nonlinear process: residue norm =  ", norm_res)
 
 	if stop_criterion:
 		an.AcceptPseudoTimeStepSolution();
-		norm_res = an.NormRhs()
+		norm_res = rhs.Norm()
 		print("Nonlinear process converged with residue norm =  ", norm_res)
 		print("Number of iterations = ", it+1)
 		break

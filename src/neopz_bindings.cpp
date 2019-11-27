@@ -32,6 +32,7 @@ using namespace py::literals;
 #include "TPZVTKGeoMesh.h"
 #include "pzgeoelbc.h"
 #include "pzgeoelside.h"
+#include "tpzgeoelrefpattern.h"
 
 #include "pzcmesh.h"
 
@@ -78,6 +79,8 @@ using namespace py::literals;
 #include "TPZSBFemVolume.h"
 #include "TPZSBFemElementGroup.h"
 #include "TPZBuildSBFem.h"
+#include "tpzquadraticquad.h"
+
 
 using namespace std;
 
@@ -529,6 +532,192 @@ PYBIND11_MODULE(neopz, m) {
         .def("NodeVec", py::overload_cast<>(&TPZGeoMesh::NodeVec))
         .def("NElements", &TPZGeoMesh::NElements)
         .def("Element", &TPZGeoMesh::Element)
+        .def("ReadUNSWSBGeoFile",[](TPZGeoMesh & self, const std::string &filename, int ESkeleton, TPZVec<int64_t> &elpartition, TPZVec<int64_t> &scalingcenterindices)
+    {
+
+        int maxvol = -1;
+
+        std::ifstream file(filename);
+
+        map<set<int64_t> , int64_t> midnode;
+        string buf;
+        getline(file,buf);
+        if(!file) DebugStop();
+        int64_t nnodes, nvolumes;
+        file >> nnodes >> nvolumes;
+        elpartition.Resize(nvolumes*6, -1);
+        TPZGeoMesh *gmesh = new TPZGeoMesh;
+        gmesh->SetDimension(3);
+        gmesh->NodeVec().Resize(nnodes);
+        for (int64_t in=0; in<nnodes; in++) {
+            TPZManVector<REAL,3> xco(3);
+            for (int i=0; i<3; i++) {
+                file >> xco[i];
+            }
+            gmesh->NodeVec()[in].Initialize(xco, *gmesh);
+        }
+#ifdef PZDEBUG
+        std::set<int64_t> badvolumes;
+#endif
+        int64_t nothing;
+        file >> nothing;
+        for (int64_t iv=0; iv<nvolumes; iv++) {
+#ifdef PZDEBUG
+            map<set<int64_t>,int64_t> nodepairs;
+#endif
+            int nfaces;
+            file >> nfaces;
+            for (int face = 0; face < nfaces; face++) {
+                int elnnodes;
+                file >> elnnodes;
+
+                TPZManVector<int64_t,10> nodes(elnnodes);
+                for (int i=0; i<elnnodes; i++) {
+                    file >> nodes[i];
+                    nodes[i]--;
+#ifdef PZDEBUG
+                    if (i>0) {
+                        set<int64_t> edge;
+                        edge.insert(nodes[i-1]);
+                        edge.insert(nodes[i]);
+                        nodepairs[edge]++;
+                    }
+                    if (i==elnnodes-1) {
+                        set<int64_t> edge;
+                        edge.insert(nodes[0]);
+                        edge.insert(nodes[i]);
+                        nodepairs[edge]++;
+                    }
+#endif
+                }
+
+                // tototototo
+                if (maxvol != -1 && iv >= maxvol) {
+                    continue;
+                }
+                if (elnnodes == 1)
+                {
+                    int64_t index;
+                    MElementType eltype = EPoint;
+                    gmesh->CreateGeoElement(eltype, nodes, ESkeleton, index);
+                    elpartition[index] = iv;
+
+                }
+                else if (elnnodes == 2)
+                {
+                    int64_t index;
+                    MElementType eltype = EOned;
+                    gmesh->CreateGeoElement(eltype, nodes, ESkeleton, index);
+                    elpartition[index] = iv;
+
+                }
+                else if (elnnodes == 3 || elnnodes == 4)
+                {
+                    int64_t index;
+                    MElementType eltype = ETriangle;
+                    if (elnnodes == 4) {
+                        eltype = EQuadrilateral;
+                    }
+                    gmesh->CreateGeoElement(eltype, nodes, ESkeleton, index);
+                    elpartition[index] = iv;
+                }
+                else if(elnnodes == 8)
+                {
+                    int64_t index;
+                    new TPZGeoElRefPattern<pzgeom::TPZQuadraticQuad> (nodes, ESkeleton, *gmesh,  index);
+                    elpartition[index] = iv;
+
+                }
+                else if(elnnodes > 4)
+                {
+                    set<int64_t>  elnodes;
+                    TPZManVector<REAL,3> midxco(3,0.);
+                    for (int i=0; i<elnnodes; i++) {
+                        elnodes.insert(nodes[i]);
+                        TPZManVector<REAL,3> x(3);
+                        gmesh->NodeVec()[nodes[i]].GetCoordinates(x);
+                        //                    std::cout << "x " << x << endl;
+                        for(int j=0; j<3; j++) midxco[j] += x[j]/elnnodes;
+                    }
+                    int64_t midindex = -1;
+                    if (midnode.find(elnodes) == midnode.end()) {
+                        midindex = gmesh->NodeVec().AllocateNewElement();
+                        gmesh->NodeVec()[midindex].Initialize(midxco, *gmesh);
+                        midnode[elnodes] = midindex;
+                    }
+                    else
+                    {
+                        midindex = midnode[elnodes];
+                    }
+                    for (int triangle = 0; triangle <elnnodes; triangle++) {
+                        TPZManVector<int64_t,3> nodeindices(3);
+                        for (int in=0; in<2; in++) {
+                            nodeindices[in] = nodes[(triangle+in)%elnnodes];
+                        }
+                        nodeindices[2] = midindex;
+                        int64_t index;
+                        gmesh->CreateGeoElement(ETriangle, nodeindices, ESkeleton, index);
+                        elpartition[index] = iv;
+                    }
+                }
+                else
+                {
+                    DebugStop();
+                }
+            }
+#ifdef PZDEBUG
+            bool suspicious = false;
+            for (auto it = nodepairs.begin(); it != nodepairs.end(); it++) {
+                if(it->second != 2) suspicious = true;
+            }
+            if (suspicious == true) {
+                std::cout << "volume " << iv << " has no closure\n";
+                badvolumes.insert(iv);
+            }
+#endif
+            if (elpartition.size() < gmesh->NElements()+100) {
+                elpartition.Resize(elpartition.size()*2, -1);
+            }
+        }
+        // totototototo
+        if (maxvol != -1) {
+            nvolumes = maxvol;
+        }
+        int64_t nmidnodes = midnode.size();
+        gmesh->NodeVec().Resize(nvolumes+nmidnodes+nnodes);
+        scalingcenterindices.Resize(nvolumes, -1);
+        for (int64_t in=0; in<nvolumes; in++) {
+            TPZManVector<REAL,3> xco(3);
+            for (int i=0; i<3; i++) {
+                file >> xco[i];
+            }
+            gmesh->NodeVec()[nnodes+nmidnodes+in].Initialize(xco, *gmesh);
+            scalingcenterindices[in] = nnodes+nmidnodes+in;
+        }
+        {
+            ofstream mirror("gmesh.vtk");
+            TPZVTKGeoMesh::PrintGMeshVTK(gmesh, mirror);
+        }
+#ifdef PZDEBUG
+        if (badvolumes.size()) {
+            int64_t nel = gmesh->NElements();
+            TPZManVector<REAL> elval(nel,0);
+            for (int64_t el=0; el<nel; el++) {
+                if (badvolumes.find(elpartition[el]) != badvolumes.end()) {
+                    elval[el] = 10.;
+                }
+            }
+            {
+                ofstream badel("gmesh_bad.vtk");
+                TPZVTKGeoMesh::PrintGMeshVTK(gmesh, badel, elval);
+            }
+        }
+#endif
+        elpartition.Resize(gmesh->NElements(), -1);
+        std::cout << "Building element connectivity\n";
+        gmesh->BuildConnectivity();
+        return gmesh;
+    })
     ;
 
     // TPZGeoNode bindings
@@ -621,11 +810,18 @@ PYBIND11_MODULE(neopz, m) {
 
     py::class_<TPZElastoPlasticMem>(m, "TPZElastoPlasticMem")
         .def(py::init())
-        .def("SetElasticResponse", & TPZElastoPlasticMem::SetElasticResponse)
-        .def("SetStress", & TPZElastoPlasticMem::SetStress)
-        .def("SetPlasticState", & TPZElastoPlasticMem::SetPlasticState)
-        // .def("sigma", [](TPZElastoPlasticMem & plasticmem){ return plasticmem.m_sigma;})
-        // .def("elastoplastic_state", [](TPZElastoPlasticMem & plasticmem){ return plasticmem.m_elastoplastic_state;})
+        .def("SetElasticResponse", [](TPZElastoPlasticMem &self, TPZElasticResponse &ER){
+            self.m_ER = ER;
+            return;
+        })
+        .def("SetStress", [](TPZElastoPlasticMem &self, TPZTensor<REAL> &stress){
+            self.m_sigma = stress;
+            return;
+        })
+        .def("SetPlasticState", [](TPZElastoPlasticMem &self, TPZPlasticState<REAL> &plastic_state){
+            self.m_elastoplastic_state = plastic_state;
+            return;
+        })
     ;
 
     
@@ -777,10 +973,9 @@ PYBIND11_MODULE(neopz, m) {
         .def("DefineGraphMesh", py::overload_cast<int,const TPZVec<std::string> &,const TPZVec<std::string>&, const std::string &  >(&TPZAnalysis::DefineGraphMesh))
         .def("DefineGraphMesh", py::overload_cast<int,const TPZVec<std::string> &,const TPZVec<std::string>&, const TPZVec<std::string>&, const std::string &  >(&TPZAnalysis::DefineGraphMesh))
         .def("PostProcess", py::overload_cast<int, int>(&TPZAnalysis::PostProcess))
-        .def("NormRhs", &TPZAnalysis::NormRhs)
         .def("Mesh", &TPZAnalysis::Mesh)
         .def("Rhs",&TPZAnalysis::Rhs)
-        .def("SetRhs", &TPZAnalysis::SetRhs)
+//        .def("SetRhs", &TPZAnalysis::SetRhs)
         .def("AcceptPseudoTimeStepSolution",[](TPZAnalysis & self){
             TPZCompMesh *cmesh = self.Mesh();
             bool update = true;
@@ -844,10 +1039,9 @@ PYBIND11_MODULE(neopz, m) {
         // .def("PostProcess", py::overload_cast<int, int>(&TPZPostProcAnalysis::PostProcess))
     ;
 
-    py::class_<TPZSBFemVolume, std::unique_ptr<TPZSBFemVolume, py::nodelete> >(m, "TPZSBFemVolume")
-        .def(py::init())
-        .def("ReadUNSWSBGeoFile", &TPZSBFemVolume::ReadUNSWSBGeoFile)
-    ;
+//    py::class_<TPZSBFemVolume, std::unique_ptr<TPZSBFemVolume, py::nodelete> >(m, "TPZSBFemVolume")
+//        .def(py::init())
+//    ;
 
     // TPZGeoMesh bindings
     py::class_<TPZVTKGeoMesh, std::unique_ptr<TPZVTKGeoMesh, py::nodelete>>(m, "TPZVTKGeoMesh")
