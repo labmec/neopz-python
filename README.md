@@ -30,15 +30,7 @@ $ sudo make install
 
 ### 2. NeoPZ
 
-The tutorial to install NeoPZ can be found at http://www.labmec.org.br/wiki/howto/roteiro_pzlinux_eng. However, an additional step has to be executed to create PZPy module. After cloning the source files in item 3.3 of NeoPZ install tutorial, execute:
-
-```
-$ cd neopz
-$ git checkout neopz-for-python
-$ cd ..
-```
-then, follow the next steps of the tutorial.
-
+The tutorial to install NeoPZ can be found at http://www.labmec.org.br/wiki/howto/roteiro_pzlinux_eng. 
 
 ## Installing the module
 
