@@ -87,7 +87,6 @@ for porder in range(minporder,maxporder,1):
 		elpartitions = TPZManVector_int64_t()
 		scalingcenterindices = TPZVec_int64_t()
 		gmesh = TPZGeoMesh()
-		print("oi linda")
 		gmesh = gmesh.ReadUNSWSBGeoFile("tests/geometric-mesh/CooksMembrane_sbfemesh_16_1_1.txt",ESkeleton,elpartitions,scalingcenterindices)
 		print("# Geometric Mesh ready!")
 		# Creating the boundary conditions
