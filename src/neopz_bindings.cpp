@@ -35,6 +35,8 @@ using namespace py::literals;
 // Computational mesh
 #include "TPZSSpStructMatrix.h"
 #include "pzcmesh.h"
+#include "TPZMultiphysicsCompMesh.h"
+#include "TPZHybridizeHDiv.h"
 
 // Material classes
 #include "TPZMaterial.h"
@@ -52,9 +54,7 @@ using namespace py::literals;
 
 PYBIND11_MODULE(neopz, m) {
     m.doc() = R"pbdoc(
-        -------------------------
-        Python bindings for NeoPZ
-        -------------------------
+
     )pbdoc";
 
     // TPZVec<T> bindings
@@ -191,6 +191,15 @@ PYBIND11_MODULE(neopz, m) {
                  py::overload_cast<int, const TPZVec<std::string>&, const TPZVec<std::string>&, const std::string&>(
                          &TPZAnalysis::DefineGraphMesh))
             .def("PostProcess", py::overload_cast<int, int>(&TPZAnalysis::PostProcess))
+            ;
+
+    py::class_<TPZMultiphysicsCompMesh>(m, "TPZMultiphysicsCompMesh")
+            .def(py::init<TPZGeoMesh *>())
+            .def("BuildMultiphysicsSpace", py::overload_cast<TPZVec<int> & , TPZVec<TPZCompMesh * > & >(&TPZMultiphysicsCompMesh::BuildMultiphysicsSpace))
+            .def("SetNMeshes", &TPZMultiphysicsCompMesh::SetNMeshes)
+            .def("SetAllCreateFunctionsMultiphysicElem", &TPZMultiphysicsCompMesh::SetAllCreateFunctionsMultiphysicElem)
+            .def("LoadSolutionFromMeshes", &TPZMultiphysicsCompMesh::LoadSolutionFromMeshes)
+            .def("InitializeBlock", &TPZMultiphysicsCompMesh::InitializeBlock)
             ;
 
 #ifdef VERSION_INFO
